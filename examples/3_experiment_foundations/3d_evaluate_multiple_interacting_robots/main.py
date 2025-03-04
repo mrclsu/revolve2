@@ -13,6 +13,8 @@ from revolve2.simulation.scene import Pose
 from revolve2.simulators.mujoco_simulator import LocalSimulator
 from revolve2.standards import fitness_functions, modular_robots_v2, terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
+from itertools import combinations
+import math
 
 
 def main() -> None:
@@ -56,6 +58,21 @@ def main() -> None:
         batch_parameters=make_standard_batch_parameters(),
         scenes=scene,
     )
+
+    # Check if any robots are close enough to mate 
+    for i in range(len(scene_states)):
+        coordinates = []
+        # Get all x,y coordinates of the robots
+        for robot in robots:
+            xy = scene_states[i].get_modular_robot_simulation_state(robot).get_pose().position
+            coordinates.append((xy[0], xy[1]))
+        threshold = 3.0
+
+        # For all pairs, check the distance between them.
+        for (i, (x1, y1)), (j, (x2, y2)) in combinations(enumerate(coordinates), 2):
+            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        if distance <= threshold:
+            print(f"Robots {i} and {j} are close enough to mate. Distance: {distance:.3f}")
 
     # Calculate the xy displacements.
     xy_displacements = [
