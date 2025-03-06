@@ -13,6 +13,8 @@ from revolve2.simulation.scene import Pose
 from revolve2.simulators.mujoco_simulator import LocalSimulator
 from revolve2.standards import fitness_functions, modular_robots_v2, terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
+from itertools import combinations
+import math
 
 
 def main() -> None:
@@ -57,6 +59,26 @@ def main() -> None:
         scenes=scene,
     )
 
+    # Check if any robots are close enough to mate 
+    met_before = set()  # check if robots have already met before, should reset every generational cycle
+    for i in range(len(scene_states)):
+        coordinates = []
+        # Get all x,y,z coordinates of the robots
+        for robot in robots:
+            xyz = scene_states[i].get_modular_robot_simulation_state(robot).get_pose().position
+            coordinates.append((xyz[0], xyz[1]))
+        threshold = 3.0
+
+        
+        for (i, (x1, y1, z1)), (j, (x2, y2, z2)) in combinations(enumerate(robots), 2):
+            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+    
+        if distance <= threshold:
+            pair = tuple(sorted((i, j)))  # Ensure (i, j) is always in the same order
+            if pair not in met_before:  # New meeting
+                met_before.add(pair)  # Mark as met
+                print(f"New meeting: Robots {i} and {j} - Distance: {distance:.3f}")
+    
     # Calculate the xy displacements.
     xy_displacements = [
         fitness_functions.xy_displacement(
