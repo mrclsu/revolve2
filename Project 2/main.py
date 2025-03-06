@@ -66,11 +66,11 @@ def main() -> None:
         # Get all x,y,z coordinates of the robots
         for robot in robots:
             xyz = scene_states[i].get_modular_robot_simulation_state(robot).get_pose().position
-            coordinates.append((xyz[0], xyz[1]))
+            coordinates.append((xyz[0], xyz[1], xyz[2]))
         threshold = 3.0
 
         
-        for (i, (x1, y1, z1)), (j, (x2, y2, z2)) in combinations(enumerate(robots), 2):
+        for (i, (x1, y1, z1)), (j, (x2, y2, z2)) in combinations(enumerate(coordinates), 2):
             distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
     
         if distance <= threshold:
