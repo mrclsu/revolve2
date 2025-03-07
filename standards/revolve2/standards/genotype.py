@@ -11,8 +11,10 @@ import numpy.typing as npt
 
 from revolve2.standards import config
 from revolve2.modular_robot import ModularRobot
+from revolve2.standards.genotypes.cppnwin._multineat_genotype_pickle_wrapper import MultineatGenotypePickleWrapper
 from revolve2.standards.genotypes.cppnwin.modular_robot import BrainGenotypeCpg
 from revolve2.standards.genotypes.cppnwin.modular_robot.v2 import BodyGenotypeV2
+
 
 
 @dataclass
@@ -70,11 +72,11 @@ class Genotype(BodyGenotypeV2, BrainGenotypeCpg):
     
     @classmethod
     def crossover(
-        cls,
-        parent1: Genotype,
-        parent2: Genotype,
-        rng: np.random.Generator,
-    ) -> Genotype:
+    cls,
+    parent1: Genotype,
+    parent2: Genotype,
+    rng: np.random.Generator,
+) -> Genotype:
         """
         Perform uniform crossover between two genotypes.
 
@@ -83,13 +85,41 @@ class Genotype(BodyGenotypeV2, BrainGenotypeCpg):
         :param rng: Random number generator.
         :returns: A newly created genotype.
         """
-        print(parent1.body)
-        # Crossover for body
-        body_mask = rng.random(size=parent1.body.shape) < 0.5
-        new_body = np.where(body_mask, parent1.body, parent2.body)
+         # Extract body and brain genomes from the parents
+        parent1_body_genome = parent1.body.genotype
+        parent2_body_genome = parent2.body.genotype
+        parent1_brain_genome = parent1.brain.genotype
+        parent2_brain_genome = parent2.brain.genotype
 
-        # Crossover for brain
-        brain_mask = rng.random(size=parent1.brain.shape) < 0.5
-        new_brain = np.where(brain_mask, parent1.brain, parent2.brain)
+        # Prepare the NEAT Parameters object (can be specific to your setup)
+        parameters = multineat.Parameters()  # This could be your default parameters
 
-        return Genotype(body=new_body, brain=new_brain)
+        # Mate the body genomes (average and interspecies flags can be adjusted as needed)
+        new_body_genome = parent1_body_genome.Mate(
+            parent2_body_genome,  # Second parent body genome
+            True,                 # Mate average (adjustable based on your requirements)
+            False,                # Inter-species (adjustable based on your requirements)
+            rng,                  # Random number generator
+            parameters            # NEAT Parameters
+        )
+
+        # Mate the brain genomes similarly
+        new_brain_genome = parent1_brain_genome.Mate(
+            parent2_brain_genome,  # Second parent brain genome
+            True,                  # Mate average (adjustable)
+            False,                 # Inter-species (adjustable)
+            rng,                   # Random number generator
+            parameters             # NEAT Parameters
+        )
+
+        # Wrap the new genomes into MultineatGenotypePickleWrapper
+        new_body_wrapper = MultineatGenotypePickleWrapper(new_body_genome)
+        new_brain_wrapper = MultineatGenotypePickleWrapper(new_brain_genome)
+
+        # Return the new genotype combining the body and brain
+        return Genotype(
+        body=new_body_wrapper, 
+        brain=new_brain_wrapper,
+        parameters=parameters  # Pass the parameters argument here
+    )
+

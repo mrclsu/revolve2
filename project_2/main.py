@@ -8,6 +8,7 @@ import multineat
 from evaluator import Evaluator
 from individual import Individual
 import config
+import numpy as np
 
 from revolve2.experimentation.logging import setup_logging
 from revolve2.experimentation.rng import make_rng_time_seed
@@ -131,7 +132,9 @@ def main() -> None:
                 print(f"New meeting: Robots {i} and {j} - Distance: {distance:.3f}")
                 if mate_selection.mate_decision():
                     print("YAY mating")
-                    #offspring = mate_selection.reproduce(population[i], population[j], rng)
+                    offspring = mate_selection.reproduce(population[i], population[j], rng)
+                    print(offspring)
+                    scene.add_robot(individual, pose=Pose(Vector3([0.0, 0.0, 0.0])))
                 elif not(mate_selection.mate_decision()):
                     print("Boo")
                 else:
