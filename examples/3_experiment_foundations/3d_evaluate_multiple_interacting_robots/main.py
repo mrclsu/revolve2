@@ -48,7 +48,7 @@ def main() -> None:
         scene.add_robot(robot, pose=pose)
 
     # Create the simulator.
-    simulator = LocalSimulator(headless=False, num_simulators=1)
+    simulator = LocalSimulator(viewer_type="native", headless=False, num_simulators=1)
 
     # Simulate all scenes.
     scene_states = simulate_scenes(

@@ -7,22 +7,27 @@ from pyrr import Quaternion, Vector3
 from revolve2.experimentation.logging import setup_logging
 from revolve2.experimentation.rng import make_rng_time_seed
 from revolve2.modular_robot import ModularRobot
-from revolve2.modular_robot.brain.cpg import BrainCpgNetworkNeighborRandom
+from revolve2.modular_robot.body.base import ActiveHinge
 from revolve2.modular_robot_simulation import (
     ModularRobotScene,
     Terrain,
     simulate_scenes,
 )
 from revolve2.simulation.scene import AABB, Color, Pose
-from revolve2.simulation.scene.geometry import GeometryBox, GeometryPlane
+from revolve2.simulation.scene.geometry import GeometryBox, GeometryPlane, GeometrySphere
 from revolve2.simulation.scene.geometry.textures import MapType
 from revolve2.simulators.mujoco_simulator import LocalSimulator
 from revolve2.simulators.mujoco_simulator.textures import Checker, Flat, Gradient
-from revolve2.standards.modular_robots_v2 import gecko_v2
+from revolve2.standards.modular_robots_v2 import gecko_v2, snake_v2
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
+import logging
+
+# Import our custom classes
+from torus_modular_robot_scene import TorusModularRobotScene
+from straight_line_brain import StraightLineBrain
 
 
-def make_custom_terrain() -> Terrain:
+def make_custom_terrain(plane_size: float = 1.0) -> Terrain:
     """
     Create a custom terrain.
 
@@ -33,49 +38,14 @@ def make_custom_terrain() -> Terrain:
     return Terrain(
         static_geometry=[
             GeometryPlane(
-                pose=Pose(position=Vector3(), orientation=Quaternion()),
+                pose=Pose(position=Vector3([0.0, 0.0, 0.0]), orientation=Quaternion()),
                 mass=0.0,
-                size=Vector3([20.0, 20.0, 0.0]),
+                size=Vector3([plane_size, plane_size, 1.0]),
                 texture=Checker(
                     primary_color=Color(170, 170, 180, 255),
                     secondary_color=Color(150, 150, 150, 255),
-                    map_type=MapType.MAP2D,
+                    map_type=MapType.CUBE,
                 ),
-            ),
-            GeometryBox(
-                pose=Pose(position=Vector3([1.0, 0.0, 0.1]), orientation=Quaternion()),
-                mass=0.0,
-                texture=Flat(primary_color=Color(0, 255, 0, 255)),
-                aabb=AABB(size=Vector3([0.5, 0.5, 0.2])),
-            ),
-            GeometryBox(
-                pose=Pose(
-                    position=Vector3([-0.8, 0.4, 0.125]), orientation=Quaternion()
-                ),
-                mass=0.0,
-                texture=Gradient(
-                    primary_color=Color(0, 200, 100, 255),
-                    secondary_color=Color(0, 100, 200, 255),
-                ),
-                aabb=AABB(size=Vector3([0.5, 0.5, 0.25])),
-            ),
-            GeometryBox(
-                pose=Pose(
-                    position=Vector3([-0.8 + 0.38, 0.3, 0.125]),
-                    orientation=Quaternion.from_eulers([0.0, math.pi / 4.0, 0.0]),
-                ),
-                mass=0.0,
-                texture=Flat(primary_color=Color(50, 80, 180, 255)),
-                aabb=AABB(size=Vector3([0.5, 0.4, 0.02])),
-            ),
-            GeometryBox(
-                pose=Pose(position=Vector3([-0.1, 0.9, 0.5]), orientation=Quaternion()),
-                mass=0.0,
-                texture=Flat(
-                    primary_color=Color(100, 0, 100, 255),
-                    base_color=Color(255, 255, 255, 100),
-                ),
-                aabb=AABB(size=Vector3([0.2, 0.2, 1.0])),
             ),
         ]
     )
@@ -90,19 +60,36 @@ def main() -> None:
     rng = make_rng_time_seed()
 
     # Create a robot
-    body = gecko_v2()
-    brain = BrainCpgNetworkNeighborRandom(body=body, rng=rng)
+    body = snake_v2()
+    
+    # Find all active hinges in the robot body
+    active_hinges = body.find_modules_of_type(ActiveHinge)
+    
+    # Create the StraightLineBrain for the robot
+    # Here we're setting the direction to move along the x-axis (forward)
+    brain = StraightLineBrain(
+        active_hinges=active_hinges,
+        direction=Vector3([1.0, 0.0, 0.0]),  # Move along the positive x-axis
+        amplitude=0.7,  # Amplitude of the oscillation - increased for more pronounced movement
+        frequency=1.0,  # Frequency of the oscillation (Hz) - slightly reduced for stability
+    )
+    
     robot = ModularRobot(body, brain)
 
-    # Create the scene.
-    scene = ModularRobotScene(terrain=make_custom_terrain())
+    # Create the scene with our custom torus handler
+    # This will create a custom scene that uses our TorusSimulationHandler
+    plane_size = 2.0  # Size of the plane (side length)
+    scene = TorusModularRobotScene(terrain=make_custom_terrain(plane_size), plane_size=plane_size)
     scene.add_robot(robot)
 
+    batch_parameters = make_standard_batch_parameters()
+    batch_parameters.simulation_time = 1200000  # Here we update our simulation time.
+
     # Simulate the scene.
-    simulator = LocalSimulator()
+    simulator = LocalSimulator(viewer_type="native")
     simulate_scenes(
         simulator=simulator,
-        batch_parameters=make_standard_batch_parameters(),
+        batch_parameters=batch_parameters,
         scenes=scene,
     )
 
