@@ -23,7 +23,7 @@ from revolve2.standards.simulation_parameters import make_standard_batch_paramet
 import logging
 
 # Import our custom classes
-from torus_modular_robot_scene import TorusModularRobotScene
+from torus_simulation_handler import TorusSimulationHandler
 from straight_line_brain import StraightLineBrain
 
 
@@ -76,17 +76,28 @@ def main() -> None:
     
     robot = ModularRobot(body, brain)
 
-    # Create the scene with our custom torus handler
-    # This will create a custom scene that uses our TorusSimulationHandler
+    # Define the plane size for our torus world
     plane_size = 2.0  # Size of the plane (side length)
-    scene = TorusModularRobotScene(terrain=make_custom_terrain(plane_size), plane_size=plane_size)
+    
+
+    
+    # Create the scene with our custom torus handler
+    scene = ModularRobotScene(terrain=make_custom_terrain(plane_size))
     scene.add_robot(robot)
 
     batch_parameters = make_standard_batch_parameters()
     batch_parameters.simulation_time = 1200000  # Here we update our simulation time.
 
-    # Simulate the scene.
+    # Create the simulator and register our teleportation handler
     simulator = LocalSimulator(viewer_type="native")
+
+    # Create a torus handler to manage teleportation
+    torus_handler = TorusSimulationHandler(plane_size=plane_size)
+    # Register our teleportation handler function - this will check and handle teleportation
+    simulator.register_teleport_handler(torus_handler.check_teleport)
+    logging.info(f"Registered teleportation handler with plane size: {plane_size}, half size: {torus_handler.half_size}")
+    
+    # Simulate the scene with active teleportation
     simulate_scenes(
         simulator=simulator,
         batch_parameters=batch_parameters,

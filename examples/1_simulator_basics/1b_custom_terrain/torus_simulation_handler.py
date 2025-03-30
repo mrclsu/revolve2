@@ -36,40 +36,44 @@ class TorusSimulationHandler(ModularRobotSimulationHandler):
         # First let parent class handle normal brain control
         super().handle(simulation_state, simulation_control, dt)
         
-        # For each robot, check if it's at the edge of the plane
-        for _, body_to_multi_body_system_mapping in self._brains:
-            # Get the multi-body system for this robot
-            multi_body_system = body_to_multi_body_system_mapping.multi_body_system
+    def check_teleport(self, position: Vector3) -> Vector3 | None:
+        """
+        Check if a robot needs to be teleported based on its position.
+        
+        This method is called by the teleportation system in the simulator.
+        
+        :param position: The current position of the robot
+        :return: A new position if teleportation is needed, None otherwise
+        """
+
+        new_position = Vector3(position)
+
+        teleported = False
+
+        # Check X boundaries
+        if position.x > self.half_size:
+            logging.info(f"TorusHandler: X > {self.half_size}, teleporting to opposite side")
+            new_position.x = -self.half_size
+            teleported = True
+        elif position.x < -self.half_size:
+            logging.info(f"TorusHandler: X < -{self.half_size}, teleporting to opposite side")
+            new_position.x = self.half_size
+            teleported = True
             
-            # Get the current pose of the robot
-            pose = simulation_state.get_multi_body_system_pose(multi_body_system)
-            position = pose.position
-            
-            # Check if the robot is at the edge of the plane and teleport if needed
-            new_position = Vector3(position)
-            teleported = False
-            
-            # Check X boundaries
-            if position.x > self.half_size:
-                new_position.x = -self.half_size
-                teleported = True
-            elif position.x < -self.half_size:
-                new_position.x = self.half_size
-                teleported = True
-                
-            # Check Y boundaries
-            if position.y > self.half_size:
-                new_position.y = -self.half_size
-                teleported = True
-            elif position.y < -self.half_size:
-                new_position.y = self.half_size
-                teleported = True
-            
-            # If we need to teleport, update the robot's position
-            if teleported:
-                # We can't directly set the position via the control interface
-                # This would need to be handled by the simulator directly
-                # Here we log the event for now
-                logging.info(f"Robot teleported from {position} to {new_position}")
-                # Note: Actual teleportation would require modifying MuJoCo's data directly
-                # which is not available through the current control interface 
+        # Check Y boundaries
+        if position.y > self.half_size:
+            logging.info(f"TorusHandler: Y > {self.half_size}, teleporting to opposite side")
+            new_position.y = -self.half_size
+            teleported = True
+        elif position.y < -self.half_size:
+            logging.info(f"TorusHandler: Y < -{self.half_size}, teleporting to opposite side")
+            new_position.y = self.half_size
+            teleported = True
+
+        # If we need to teleport, return the new position
+        if teleported:
+            logging.info(f"Teleporting robot from  x: {position.x} y: {position.y} z: {position.z} to x: {new_position.x} y: {new_position.y} z: {new_position.z}")
+            return new_position
+
+        # Otherwise, return None to indicate no teleportation needed 
+        return None
