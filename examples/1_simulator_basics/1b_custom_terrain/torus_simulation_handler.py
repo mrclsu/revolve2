@@ -3,11 +3,10 @@
 import logging
 from pyrr import Vector3
 
-from revolve2.modular_robot_simulation._modular_robot_simulation_handler import ModularRobotSimulationHandler
-from revolve2.simulation.scene import ControlInterface, SimulationState
+from revolve2.simulators.mujoco_simulator._teleport_handler import TeleportHandler
 
 
-class TorusSimulationTeleportationHandler():
+class TorusSimulationTeleportationHandler(TeleportHandler):
     """Simulation handler that teleports robots to the other side of the plane when they reach the edge."""
 
     def __init__(self, plane_size: float = 1.0):

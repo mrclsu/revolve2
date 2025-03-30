@@ -78,9 +78,7 @@ def main() -> None:
 
     # Define the plane size for our torus world
     plane_size = 2.0  # Size of the plane (side length)
-    
 
-    
     # Create the scene with our custom torus handler
     scene = ModularRobotScene(terrain=make_custom_terrain(plane_size))
     scene.add_robot(robot)
@@ -93,8 +91,7 @@ def main() -> None:
 
     # Create a torus handler to manage teleportation
     torus_handler = TorusSimulationTeleportationHandler(plane_size=plane_size)
-    # Register our teleportation handler function - this will check and handle teleportation
-    simulator.register_teleport_handler(torus_handler.handle)
+    simulator.register_teleport_handler(torus_handler)
     logging.info(f"Registered teleportation handler with plane size: {plane_size}, half size: {torus_handler.half_size}")
     
     # Simulate the scene with active teleportation

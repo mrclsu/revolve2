@@ -9,6 +9,8 @@ from pyrr import Vector3
 
 from revolve2.simulation.scene import Scene, SimulationState
 from revolve2.simulation.simulator import RecordSettings
+from revolve2.simulators.mujoco_simulator._abstraction_to_mujoco_mapping import AbstractionToMujocoMapping
+from revolve2.simulators.mujoco_simulator._teleport_handler import TeleportHandler
 
 from ._control_interface_impl import ControlInterfaceImpl
 from ._open_gl_vision import OpenGLVision
@@ -31,7 +33,7 @@ def simulate_scene(
     cast_shadows: bool,
     fast_sim: bool,
     viewer_type: ViewerType,
-    teleport_handlers: list = None,
+    teleport_handlers: list[TeleportHandler] = [],
     render_backend: RenderBackend = RenderBackend.EGL,
 ) -> list[SimulationState]:
     """
@@ -56,9 +58,6 @@ def simulate_scene(
     """
     logging.info(f"Simulating scene {scene_id}")
 
-    # Initialize if teleport_handlers is None
-    if teleport_handlers is None:
-        teleport_handlers = []
 
     """Define mujoco data and model objects for simuating."""
     model, mapping = scene_to_model(
@@ -231,7 +230,7 @@ def simulate_scene(
     logging.info(f"Scene {scene_id} done.")
     return simulation_states
 
-def _handle_teleportation(model, data, mapping, teleport_handlers, images):
+def _handle_teleportation(model, data, mapping: AbstractionToMujocoMapping, teleport_handlers: list[TeleportHandler], images: dict):
     # Check for teleportation after handling control
     # Loop through each multi-body system (robot) in the scene
     for mbs_uuid, mbs_mujoco in mapping.multi_body_system.items():
@@ -250,7 +249,7 @@ def _handle_teleportation(model, data, mapping, teleport_handlers, images):
         
         # Check each teleport handler to see if the robot should be teleported
         for handler in teleport_handlers:
-            new_position = handler(position)
+            new_position = handler.handle(position)
             if new_position is not None:
                 logging.info(f"Teleporting robot from {position} to {new_position}")
                 
