@@ -161,76 +161,7 @@ def simulate_scene(
                 data=data, abstraction_to_mujoco_mapping=mapping, camera_views=images
             )
             scene.handler.handle(simulation_state, control_interface, control_step)
-            
-            # Check for teleportation after handling control
-            # Loop through each multi-body system (robot) in the scene
-            for mbs_uuid, mbs_mujoco in mapping.multi_body_system.items():
-                # Get the robot's body ID in MuJoCo
-                # The id field is the base body ID of the multi-body system
-                body_id = mbs_mujoco.id
-                
-                # Get current robot position from simulation state
-                simulation_state = SimulationStateImpl(
-                    data=data, abstraction_to_mujoco_mapping=mapping, camera_views=images
-                )
-                
-                # Use the multi-body system pose to get position
-                pose = simulation_state.get_multi_body_system_pose(mbs_uuid.value)
-                position = Vector3(pose.position)
-                
-                # Check each teleport handler to see if the robot should be teleported
-                for handler in teleport_handlers:
-                    new_position = handler(position)
-                    if new_position is not None:
-                        logging.info(f"Teleporting robot from {position} to {new_position}")
-                        
-                        # Find the freejoint for this body in the model
-                        joint_found = False
-                        for i in range(model.njnt):
-                            # Check if this is a free joint connected to our body
-                            if model.jnt_type[i] == mujoco.mjtJoint.mjJNT_FREE and model.jnt_bodyid[i] == body_id:
-                                joint_found = True
-                                # Get the qpos address for this joint
-                                qpos_addr = model.jnt_qposadr[i]
-                                
-                                logging.info(f"Found joint for body {body_id} at qpos index {qpos_addr}")
-                                
-                                # Log previous position
-                                prev_x = data.qpos[qpos_addr]
-                                prev_y = data.qpos[qpos_addr + 1]
-                                prev_z = data.qpos[qpos_addr + 2]
-                                logging.info(f"Previous qpos: ({prev_x}, {prev_y}, {prev_z})")
-                                
-                                # Set the position part of the free joint's qpos (first 3 values)
-                                data.qpos[qpos_addr] = new_position.x  
-                                data.qpos[qpos_addr + 1] = new_position.y
-                                data.qpos[qpos_addr + 2] = new_position.z
-                                
-                                # Log new position
-                                logging.info(f"Updated qpos to: ({data.qpos[qpos_addr]}, {data.qpos[qpos_addr + 1]}, {data.qpos[qpos_addr + 2]})")
-                                
-                                # Reset velocities for this joint
-                                # First find the dof address for this joint
-                                dof_addr = model.jnt_dofadr[i]
-                                
-                                # Set linear velocities to zero (first 3 values of qvel)
-                                data.qvel[dof_addr] = 0.0
-                                data.qvel[dof_addr + 1] = 0.0
-                                data.qvel[dof_addr + 2] = 0.0
-                                
-                                # Forward to update simulation state
-                                mujoco.mj_forward(model, data)
-                                break
-                        
-                        if not joint_found:
-                            logging.error(f"Failed to find free joint for body ID {body_id}")
-                            # Debug info - print all joints and their body IDs
-                            for i in range(model.njnt):
-                                joint_type = model.jnt_type[i]
-                                joint_body = model.jnt_bodyid[i]
-                                logging.error(f"Joint {i}: type={joint_type}, body={joint_body}")
-                                
-                        break  # Only apply the first handler that returns a new position
+            _handle_teleportation(model, data, mapping, teleport_handlers, images)
 
         # sample state if it is time
         if sample_step is not None:
@@ -299,3 +230,74 @@ def simulate_scene(
 
     logging.info(f"Scene {scene_id} done.")
     return simulation_states
+
+def _handle_teleportation(model, data, mapping, teleport_handlers, images):
+    # Check for teleportation after handling control
+    # Loop through each multi-body system (robot) in the scene
+    for mbs_uuid, mbs_mujoco in mapping.multi_body_system.items():
+        # Get the robot's body ID in MuJoCo
+        # The id field is the base body ID of the multi-body system
+        body_id = mbs_mujoco.id
+        
+        # Get current robot position from simulation state
+        simulation_state = SimulationStateImpl(
+            data=data, abstraction_to_mujoco_mapping=mapping, camera_views=images
+        )
+        
+        # Use the multi-body system pose to get position
+        pose = simulation_state.get_multi_body_system_pose(mbs_uuid.value)
+        position = Vector3(pose.position)
+        
+        # Check each teleport handler to see if the robot should be teleported
+        for handler in teleport_handlers:
+            new_position = handler(position)
+            if new_position is not None:
+                logging.info(f"Teleporting robot from {position} to {new_position}")
+                
+                # Find the freejoint for this body in the model
+                joint_found = False
+                for i in range(model.njnt):
+                    # Check if this is a free joint connected to our body
+                    if model.jnt_type[i] == mujoco.mjtJoint.mjJNT_FREE and model.jnt_bodyid[i] == body_id:
+                        joint_found = True
+                        # Get the qpos address for this joint
+                        qpos_addr = model.jnt_qposadr[i]
+                        
+                        logging.info(f"Found joint for body {body_id} at qpos index {qpos_addr}")
+                        
+                        # Log previous position
+                        prev_x = data.qpos[qpos_addr]
+                        prev_y = data.qpos[qpos_addr + 1]
+                        prev_z = data.qpos[qpos_addr + 2]
+                        logging.info(f"Previous qpos: ({prev_x}, {prev_y}, {prev_z})")
+                        
+                        # Set the position part of the free joint's qpos (first 3 values)
+                        data.qpos[qpos_addr] = new_position.x  
+                        data.qpos[qpos_addr + 1] = new_position.y
+                        data.qpos[qpos_addr + 2] = new_position.z
+                        
+                        # Log new position
+                        logging.info(f"Updated qpos to: ({data.qpos[qpos_addr]}, {data.qpos[qpos_addr + 1]}, {data.qpos[qpos_addr + 2]})")
+                        
+                        # Reset velocities for this joint
+                        # First find the dof address for this joint
+                        dof_addr = model.jnt_dofadr[i]
+                        
+                        # Set linear velocities to zero (first 3 values of qvel)
+                        data.qvel[dof_addr] = 0.0
+                        data.qvel[dof_addr + 1] = 0.0
+                        data.qvel[dof_addr + 2] = 0.0
+                        
+                        # Forward to update simulation state
+                        mujoco.mj_forward(model, data)
+                        break
+                
+                if not joint_found:
+                    logging.error(f"Failed to find free joint for body ID {body_id}")
+                    # Debug info - print all joints and their body IDs
+                    for i in range(model.njnt):
+                        joint_type = model.jnt_type[i]
+                        joint_body = model.jnt_bodyid[i]
+                        logging.error(f"Joint {i}: type={joint_type}, body={joint_body}")
+                        
+                break  # Only apply the first handler that returns a new position

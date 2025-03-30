@@ -7,7 +7,7 @@ from revolve2.modular_robot_simulation._modular_robot_simulation_handler import 
 from revolve2.simulation.scene import ControlInterface, SimulationState
 
 
-class TorusSimulationHandler(ModularRobotSimulationHandler):
+class TorusSimulationTeleportationHandler():
     """Simulation handler that teleports robots to the other side of the plane when they reach the edge."""
 
     def __init__(self, plane_size: float = 1.0):
@@ -16,27 +16,11 @@ class TorusSimulationHandler(ModularRobotSimulationHandler):
         
         :param plane_size: The size of the plane (assumes square plane).
         """
-        super().__init__()
         self.plane_size = plane_size
         self.half_size = self.plane_size / 2.0
+
         
-    def handle(
-        self,
-        simulation_state: SimulationState,
-        simulation_control: ControlInterface,
-        dt: float,
-    ) -> None:
-        """
-        Handle a simulation frame, checking for robots at plane edges.
-        
-        :param simulation_state: The current state of the simulation.
-        :param simulation_control: Interface for setting control targets.
-        :param dt: The time since the last call to this function.
-        """
-        # First let parent class handle normal brain control
-        super().handle(simulation_state, simulation_control, dt)
-        
-    def check_teleport(self, position: Vector3) -> Vector3 | None:
+    def handle(self, position: Vector3) -> Vector3 | None:
         """
         Check if a robot needs to be teleported based on its position.
         

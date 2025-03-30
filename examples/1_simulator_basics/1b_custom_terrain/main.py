@@ -23,7 +23,7 @@ from revolve2.standards.simulation_parameters import make_standard_batch_paramet
 import logging
 
 # Import our custom classes
-from torus_simulation_handler import TorusSimulationHandler
+from torus_simulation_handler import TorusSimulationTeleportationHandler
 from straight_line_brain import StraightLineBrain
 
 
@@ -92,9 +92,9 @@ def main() -> None:
     simulator = LocalSimulator(viewer_type="native")
 
     # Create a torus handler to manage teleportation
-    torus_handler = TorusSimulationHandler(plane_size=plane_size)
+    torus_handler = TorusSimulationTeleportationHandler(plane_size=plane_size)
     # Register our teleportation handler function - this will check and handle teleportation
-    simulator.register_teleport_handler(torus_handler.check_teleport)
+    simulator.register_teleport_handler(torus_handler.handle)
     logging.info(f"Registered teleportation handler with plane size: {plane_size}, half size: {torus_handler.half_size}")
     
     # Simulate the scene with active teleportation
