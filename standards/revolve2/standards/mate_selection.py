@@ -1,5 +1,6 @@
 import random
 from revolve2.standards.genotype import Genotype
+from individual import Individual
 
 import numpy as np
 import multineat
@@ -21,5 +22,5 @@ def reproduce(parent1, parent2, rng):
     rng_multi = multineat.RNG()
     offspring = [Genotype.crossover(parent1.genotype, parent2.genotype, rng_multi)]
     #offspring = [Genotype.crossover(parent1.genotype, parent2.genotype, rng_multi).mutate(rng)]
-    return offspring
+    return Individual(genotype=offspring[0], fitness=0.0)
 

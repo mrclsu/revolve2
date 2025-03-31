@@ -35,6 +35,10 @@ def main() -> None:
     innov_db_body = multineat.InnovationDatabase()
     innov_db_brain = multineat.InnovationDatabase()
 
+    # scene size 
+    FIELD_X_MIN, FIELD_X_MAX = -5, 5  # Adjust based on your simulation size
+    FIELD_Y_MIN, FIELD_Y_MAX = -5, 5
+
     # Create an initial population.
     logging.info("Generating initial population.")
     initial_genotypes = [
@@ -101,45 +105,86 @@ def main() -> None:
     #for robot, pose in zip(robots, poses):
     #    scene.add_robot(robot, pose=pose)
 
+    def get_random_free_position(existing_positions, min_dist=2.0):
+        """Find a random position that is not too close to existing robots."""
+        while True:
+            x = random.uniform(FIELD_X_MIN, FIELD_X_MAX)
+            y = random.uniform(FIELD_Y_MIN, FIELD_Y_MAX)
+            z = 0.0  # Assuming a flat field
+
+            # Check distance from existing robots
+            if all(math.sqrt((x - ex) ** 2 + (y - ey) ** 2) >= min_dist for ex, ey, _ in existing_positions):
+                return Vector3([x, y, z])  # Valid position found
+
     # Create the simulator.
     simulator = LocalSimulator(headless=False, num_simulators=1)
 
-    # Simulate all scenes.
-    scene_states = simulate_scenes(
-        simulator=simulator,
-        batch_parameters=make_standard_batch_parameters(),
-        scenes=scene,
-    )
 
     # Check if any robots are close enough to mate 
     met_before = set()  # check if robots have already met before, should reset every generational cycle
-    for i in range(len(scene_states)):
-        coordinates = []
-        # Get all x,y,z coordinates of the robots
-        for robot in robots:
-            xyz = scene_states[i].get_modular_robot_simulation_state(robot).get_pose().position
-            coordinates.append((xyz[0], xyz[1], xyz[2]))
-        threshold = 3.0
+    for i in range(100):  # Loop for iterative simulation steps (or replace with a fixed number of iterations)
+        scene_state = simulate_scenes(
+            simulator=simulator,
+            batch_parameters=make_standard_batch_parameters(),
+            scenes=scene,
+        )[0]  # Process one scene at a time
 
+        coordinates = []
+
+        # Get positions of all robots
+        robots = [robot for robot, pose, _ in scene._robots]
+        for robot in robots:
+            xyz = scene_state.get_modular_robot_simulation_state(robot).get_pose().position
+            coordinates.append((xyz[0], xyz[1], xyz[2]))
+
+        # Save positions into a dictionary if needed (if not already done)
+        saved_scene_state = {}
+        for i, (x, y, z) in enumerate(coordinates):
+            saved_scene_state[i] = {
+                "position": (x, y, z),
+            }
         
+        existing_positions = [pose.position for _, pose, _ in scene._robots]
+
+
+        scene = ModularRobotScene(terrain=terrains.flat())
+
+
+        # Add robots to the new scene at the saved positions (ignoring orientation)
+        for i, state in saved_scene_state.items():
+            position = state["position"]
+
+            # Convert saved position to a Pose (with default orientation)
+            pose = Pose(Vector3(position))  # Use default orientation (no rotation)
+
+            # Add robot to the new scene
+            scene.add_robot(robots[i], pose=pose)  # Add the robot with its new pose
+
+        threshold = 1.2
+
         for (i, (x1, y1, z1)), (j, (x2, y2, z2)) in combinations(enumerate(coordinates), 2):
             distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
-    
-        if distance <= threshold:
-            pair = tuple(sorted((i, j)))  # Ensure (i, j) is always in the same order
-            if pair not in met_before:  # New meeting
-                met_before.add(pair)  # Mark as met
-                print(f"New meeting: Robots {i} and {j} - Distance: {distance:.3f}")
-                if mate_selection.mate_decision():
-                    print("YAY mating")
-                    offspring = mate_selection.reproduce(population[i], population[j], rng)
-                    print(offspring)
-                    scene.add_robot(individual, pose=Pose(Vector3([0.0, 0.0, 0.0])))
-                elif not(mate_selection.mate_decision()):
-                    print("Boo")
-                else:
-                    print("BAD")
 
+            if distance <= threshold:
+                pair = tuple(sorted((i, j)))  # Ensure consistent order
+                if pair not in met_before:  # New meeting
+                    met_before.add(pair)
+                    print(f"New meeting: Robots {i} and {j} - Distance: {distance:.3f}")
+
+                    if mate_selection.mate_decision():
+                        print("YAY mating!")
+                        offspring = mate_selection.reproduce(population[i], population[j], rng)
+                        population.append(offspring)
+                        offspring = offspring.genotype.develop(config.VISUALIZE_MAP)
+                        
+
+                        # Add offspring dynamically
+                        random_position = get_random_free_position(existing_positions)
+                        scene.add_robot(offspring, pose=Pose(random_position))
+                        #scene.add_robot(offspring, pose=Pose(Vector3([0.0, 0.0, 0.0])))
+                        # WE SHOULD ADD THEM ON A RANDOM FREE SPOT, DEPENDS ON ENVIRONMENT
+        
+        
     
     # Calculate the xy displacements.
     xy_displacements = [
