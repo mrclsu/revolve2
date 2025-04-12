@@ -100,6 +100,7 @@ def __evaluate_cppn(
     :returns: (module type, angle)
     """
     x, y, z = position
+    x = np.int_(x)
     assert isinstance(
         x, np.int_
     ), f"Error: The position is not of type int. Type: {type(x)}."

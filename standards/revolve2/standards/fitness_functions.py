@@ -1,5 +1,5 @@
 """Standard fitness functions for modular robots."""
-
+import random
 import math
 
 from revolve2.modular_robot_simulation import ModularRobotSimulationState

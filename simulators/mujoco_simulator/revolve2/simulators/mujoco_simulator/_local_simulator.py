@@ -1,9 +1,12 @@
 import concurrent.futures
 import logging
 import os
+import mujoco
 
-from revolve2.simulation.scene import SimulationState
+from revolve2.simulation.scene import SimulationState, MultiBodySystem, Pose
 from revolve2.simulation.simulator import Batch, Simulator
+from pyrr import Vector3, Quaternion
+from revolve2.simulators.mujoco_simulator._teleport_handler import TeleportHandler
 
 from ._simulate_manual_scene import simulate_manual_scene
 from ._simulate_scene import simulate_scene
@@ -20,6 +23,7 @@ class LocalSimulator(Simulator):
     _fast_sim: bool
     _manual_control: bool
     _viewer_type: ViewerType
+    _teleport_handlers: list[TeleportHandler] = []  # Handlers for teleportation logic
 
     def __init__(
         self,
@@ -61,6 +65,18 @@ class LocalSimulator(Simulator):
             if isinstance(viewer_type, str)
             else viewer_type
         )
+        self._teleport_handlers = []
+
+    def register_teleport_handler(self, handler: TeleportHandler) -> None:
+        """
+        Register a teleportation handler function.
+        
+        The handler should be a function that takes a robot position and returns a new position if 
+        teleportation should occur, or None if no teleportation is needed.
+        
+        :param handler: A function that handles teleportation logic
+        """
+        self._teleport_handlers.append(handler)
 
     def simulate_batch(self, batch: Batch) -> list[list[SimulationState]]:
         """
@@ -111,6 +127,7 @@ class LocalSimulator(Simulator):
                         self._cast_shadows,
                         self._fast_sim,
                         self._viewer_type,
+                        self._teleport_handlers,  # Pass teleport handlers to simulate_scene
                     )
                     for scene_index, scene in enumerate(batch.scenes)
                 ]
@@ -130,6 +147,7 @@ class LocalSimulator(Simulator):
                     self._cast_shadows,
                     self._fast_sim,
                     self._viewer_type,
+                    self._teleport_handlers,  # Pass teleport handlers to simulate_scene
                 )
                 for scene_index, scene in enumerate(batch.scenes)
             ]

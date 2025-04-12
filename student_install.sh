@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Installs all Revolve2 packages in editable mode as well as all example requirements.
 # This is the same as installing `requirements_editable.txt`.
