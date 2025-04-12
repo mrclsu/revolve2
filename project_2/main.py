@@ -3,6 +3,7 @@
 import logging
 
 from pyrr import Vector3
+from revolve2.simulation.scene.vector2.vector2 import Vector2
 from genotype import Genotype
 import multineat
 from evaluator import Evaluator
@@ -23,6 +24,8 @@ from itertools import combinations
 #from revolve2.standards.mate_selection import Reproducer
 import math
 import random
+
+from torus_simulation_handler import TorusSimulationTeleportationHandler
 
 
 def main() -> None:
@@ -117,9 +120,7 @@ def main() -> None:
                 return Vector3([x, y, z])  # Valid position found
 
     # Create the simulator.
-    simulator = LocalSimulator(headless=False, num_simulators=1)
-
-
+    simulator = LocalSimulator(viewer_type='native', headless=False, num_simulators=1)
     # Check if any robots are close enough to mate 
     met_before = set()  # check if robots have already met before, should reset every generational cycle
     for i in range(100):  # Loop for iterative simulation steps (or replace with a fixed number of iterations)
@@ -146,8 +147,11 @@ def main() -> None:
         
         existing_positions = [pose.position for _, pose, _ in scene._robots]
 
-
-        scene = ModularRobotScene(terrain=terrains.flat())
+        plane_size = 10.0 # TODO USE THE CONSTANTS TO CALCULATE THIS
+        scene = ModularRobotScene(terrain=terrains.flat(Vector2([plane_size, plane_size])))
+        torus_handler = TorusSimulationTeleportationHandler(plane_size=plane_size)
+        simulator.register_teleport_handler(torus_handler)
+        logging.info(f"Registered teleportation handler with plane size: {plane_size}, half size: {torus_handler.half_size}")
 
 
         # Add robots to the new scene at the saved positions (ignoring orientation)

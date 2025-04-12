@@ -23,7 +23,7 @@ from revolve2.standards.simulation_parameters import make_standard_batch_paramet
 import logging
 
 # Import our custom classes
-from torus_simulation_handler import TorusSimulationTeleportationHandler
+from project_2.torus_simulation_handler import TorusSimulationTeleportationHandler
 from straight_line_brain import StraightLineBrain
 
 
