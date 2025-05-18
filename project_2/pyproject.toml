@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "revolve2-project2"
+version = "0.1.0"
+description = "Modular robot simulation and evolution with torus environment"
+authors = [{ name = "The author", email = "author@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "revolve2-standards",
+    "revolve2-experimentation",
+    "revolve2-modular_robot_simulation",
+    "revolve2-modular_robot_physical",
+    "revolve2-modular_robot",
+    "revolve2-simulation",
+    "numpy",
+    "multineat",
+    "pyrr",
+]
+
+[project.optional-dependencies]
+dev = ["black", "isort", "mypy", "flake8"]
+
+[tool.setuptools]
+packages = ["utils"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"
