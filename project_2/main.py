@@ -98,8 +98,6 @@ def main() -> None:
     simulation_results = []
     # Create the simulator.
     simulator = initialize_local_simulator(plane_size)
-    # Check if any robots are close enough to mate
-    # check if robots have already met before, should reset every generational cycle
     met_before = set()
 
     for i in range(ITERATIONS):
