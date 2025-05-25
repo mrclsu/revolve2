@@ -26,6 +26,7 @@ from itertools import combinations
 import math
 import random
 
+from incubator import Incubator
 from utils.field_limits import FieldLimits
 from utils.helpers import initialize_local_simulator, get_random_free_position
 from simulation_result import SimulationResult
@@ -51,33 +52,15 @@ def main() -> None:
     # TODO: calculate from field vars
     plane_size = 10.0
 
-    # Create an initial population.
+    # Create an initial population, with pre-trained brains
     logging.info("Generating initial population.")
-    initial_genotypes = [
-        Genotype.random(
-            innov_db_body=innov_db_body,
-            innov_db_brain=innov_db_brain,
-            rng=rng,
-        )
-        for _ in range(config.POPULATION_SIZE)
-    ]
-
-    # You can choose to not evaluate the robots if all you want is to visualize the morphologies or compute diversity to save time
-    if config.EVALUATE:
-        logging.info("Evaluating initial population.")
-        initial_fitnesses = Evaluator(
-            headless=True, num_simulators=config.NUM_SIMULATORS
-        ).evaluate(initial_genotypes)
-    else:
-        initial_fitnesses = [
-            random.uniform(0.0, 1.0) for _ in range(len(initial_genotypes))
-        ]
-
-    # Create a population of individuals, combining genotype with fitness.
-    population = [
-        Individual(genotype, fitness)
-        for genotype, fitness in zip(initial_genotypes, initial_fitnesses, strict=True)
-    ]
+    population = Incubator(
+        population_size=config.POPULATION_SIZE,
+        training_budget=config.INCUBATOR_TRAINING_BUDGET,
+        innov_db_body=innov_db_body,
+        innov_db_brain=innov_db_brain,
+        rng=rng,
+    ).incubate()
 
     # Create the robot bodies from the genotypes of the population
     # We need to map Individuals to their robot representations for position tracking

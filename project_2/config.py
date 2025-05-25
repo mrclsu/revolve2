@@ -8,4 +8,4 @@ VISUALIZE_MAP = False  # Be careful when setting this to true when POPULATION_si
 
 # Incubator settings
 USE_INCUBATOR = True  # Whether to use the incubator for pretraining
-INCUBATOR_TRAINING_BUDGET = 20  # Number of RevDE iterations for pretraining
+INCUBATOR_TRAINING_BUDGET = 10  # Number of RevDE iterations for pretraining

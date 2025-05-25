@@ -1,3 +1,5 @@
+import logging
+from revolve2.simulation.scene.vector2.vector2 import Vector2
 from individual import Individual
 from genotype import Genotype
 
@@ -5,18 +7,10 @@ import multineat
 import numpy as np
 from revolve2.modular_robot_simulation import ModularRobotScene, simulate_scenes
 from revolve2.simulators.mujoco_simulator import LocalSimulator
-from revolve2.standards import fitness_functions, terrains
+from revolve2.standards import terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
 
-"""
-Incubator is a class that manages the population of individuals, in their very first generation.
-
-It will be responsible for:
-- generating the initial population
-- pretraining the individuals using the RevDE (Differential Evolution) algorithm
-- evaluating the individuals for their initial fitness
-- focusing only on brain training while keeping bodies fixed during incubation
-"""
+from simulation_result import SimulationResult
 
 
 class Incubator:
@@ -29,6 +23,7 @@ class Incubator:
         rng: np.random.Generator,
         headless: bool = True,
         num_simulators: int = 1,
+        plane_size: float = 10.0,
     ):
         self.population_size = population_size
         self.training_budget = training_budget
@@ -40,7 +35,7 @@ class Incubator:
         self._simulator = LocalSimulator(
             headless=headless, num_simulators=num_simulators, viewer_type="native"
         )
-        self._terrain = terrains.flat()
+        self.plane_size = plane_size
 
         # RevDE algorithm parameters
         self.F = 0.5  # Scaling factor for differential mutation
@@ -144,7 +139,9 @@ class Incubator:
         scenes = []
 
         for robot in robots:
-            scene = ModularRobotScene(terrain=self._terrain)
+            scene = ModularRobotScene(
+                terrain=terrains.flat(Vector2([self.plane_size, self.plane_size]))
+            )
             scene.add_robot(robot)
             scenes.append(scene)
 
@@ -155,16 +152,8 @@ class Incubator:
             scenes=scenes,
         )
 
-        # Calculate xy displacements for all robots
-        xy_displacements = [
-            fitness_functions.xy_displacement(
-                states[0].get_modular_robot_simulation_state(robot),
-                states[-1].get_modular_robot_simulation_state(robot),
-            )
-            for robot, states in zip(robots, scene_states)
-        ]
-
-        return xy_displacements
+        simulation_result = SimulationResult(scene_states)
+        return simulation_result.fitness(robots)
 
     def incubate(self) -> list[Individual]:
         """
@@ -173,12 +162,12 @@ class Incubator:
 
         :return: List of pretrained individuals with optimized brains
         """
-        print(
+        logging.info(
             f"Starting RevDE brain-only pretraining with {self.training_budget} iterations..."
         )
 
         # Convert genotypes to individuals with initial fitness using batch evaluation
-        print("Evaluating initial population...")
+        logging.info("Evaluating initial population...")
         initial_fitnesses = self._evaluate_fitness_batch(self.population)
         individuals = [
             Individual(genotype, fitness)
@@ -187,11 +176,11 @@ class Incubator:
 
         # RevDE main loop
         for iteration in range(self.training_budget):
-            if iteration % 10 == 0:
-                print(f"RevDE iteration {iteration}/{self.training_budget}")
+            if iteration % 5 == 0:
+                logging.info(f"RevDE iteration {iteration}/{self.training_budget}")
 
-            new_individuals = []
-            trial_genotypes = []
+            new_individuals: list[Individual] = []
+            trial_genotypes: list[Genotype] = []
 
             # Generate all trial genotypes first
             for i in range(len(individuals)):
@@ -221,5 +210,5 @@ class Incubator:
 
             individuals = new_individuals
 
-        print("RevDE pretraining completed!")
+        logging.info("RevDE pretraining completed!")
         return individuals
