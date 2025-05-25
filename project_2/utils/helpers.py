@@ -7,8 +7,12 @@ import logging
 from utils.field_limits import FieldLimits
 
 
-def initialize_local_simulator(plane_size: float) -> LocalSimulator:
-    simulator = LocalSimulator(viewer_type="native", headless=False, num_simulators=1)
+def initialize_local_simulator(
+    plane_size: float, headless: bool = False, num_simulators: int = 1
+) -> LocalSimulator:
+    simulator = LocalSimulator(
+        viewer_type="native", headless=headless, num_simulators=num_simulators
+    )
     torus_handler = TorusSimulationTeleportationHandler(plane_size=plane_size)
     simulator.register_teleport_handler(torus_handler)
     logging.info(

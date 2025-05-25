@@ -10,6 +10,7 @@ from revolve2.simulators.mujoco_simulator import LocalSimulator
 from revolve2.standards import terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
 
+from utils.helpers import initialize_local_simulator
 from simulation_result import SimulationResult
 
 
@@ -31,10 +32,10 @@ class Incubator:
         self.innov_db_brain = innov_db_brain
         self.rng = rng
 
-        # Initialize simulator and terrain for fitness evaluation
-        self._simulator = LocalSimulator(
-            headless=headless, num_simulators=num_simulators, viewer_type="native"
+        self._simulator = initialize_local_simulator(
+            plane_size, headless=headless, num_simulators=num_simulators
         )
+
         self.plane_size = plane_size
 
         # RevDE algorithm parameters

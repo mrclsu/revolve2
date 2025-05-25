@@ -15,7 +15,6 @@ from revolve2.experimentation.rng import make_rng_time_seed
 from revolve2.modular_robot_simulation import ModularRobotScene, simulate_scenes
 from revolve2.simulation.scene import Pose
 from revolve2.standards import (
-    fitness_functions,
     terrains,
     mate_selection,
 )
