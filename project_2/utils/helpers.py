@@ -22,10 +22,13 @@ def initialize_local_simulator(
 
 
 def get_random_free_position(
-    limits: FieldLimits, existing_positions: list[Vector3], min_dist: float = 2.0
+    limits: FieldLimits,
+    existing_positions: list[Vector3],
+    min_dist: float = 2.0,
+    bailout_limit=1000,
 ) -> Vector3:
     """Find a random position that is not too close to existing robots."""
-    while True:
+    for _ in range(bailout_limit):
         x = random.uniform(limits.get_x_min(), limits.get_x_max())
         y = random.uniform(limits.get_y_min(), limits.get_y_max())
         z = 0.0  # Assuming a flat field
@@ -36,3 +39,12 @@ def get_random_free_position(
             for ex, ey, _ in existing_positions
         ):
             return Vector3([x, y, z])  # Valid position found
+
+    # Return some random location if we can't find a valid one
+    return Vector3(
+        [
+            random.uniform(limits.get_x_min(), limits.get_x_max()),
+            random.uniform(limits.get_y_min(), limits.get_y_max()),
+            0,
+        ]
+    )

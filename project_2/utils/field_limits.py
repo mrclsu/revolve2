@@ -16,3 +16,6 @@ class FieldLimits:
 
     def get_y_max(self):
         return self.y_max
+
+    def calculate_plane_size(self):
+        return max(self.x_max - self.x_min, self.y_max - self.y_min)
