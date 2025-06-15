@@ -7,7 +7,7 @@ VISUALIZE_MAP = False  # Be careful when setting this to true when POPULATION_si
 
 # Incubator settings
 INCUBATOR_TRAINING_BUDGET = (
-    0  # Number of RevDE iterations for pretraining, 0 disables pretraining
+    100  # Number of RevDE iterations for pretraining, 0 disables pretraining
 )
 
 # Population settings

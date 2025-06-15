@@ -119,7 +119,6 @@ def main() -> None:
             )
             coordinates.append((xyz.x, xyz.y, xyz.z))
 
-        logging.info(f"coordinates: {coordinates}")
         logging.info(f"coordinates length: {len(coordinates)}")
         logging.info(f"existing_robots length: {len(existing_robots)}")
         logging.info(f"existing_positions length: {len(existing_positions)}")
