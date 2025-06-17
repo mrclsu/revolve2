@@ -28,17 +28,9 @@ import math
 import random
 
 from incubator import Incubator
-from stats import Statistics
-from utils.field_limits import FieldLimits
 from utils.helpers import initialize_local_simulator, get_random_free_position
 from simulation_result import SimulationResult
-
-# TODO: move to config
-ITERATIONS = 300
-FIELD_X_MIN, FIELD_X_MAX = -10, 10  # Adjust based on your simulation size
-FIELD_Y_MIN, FIELD_Y_MAX = -10, 10
-
-LIMITS = FieldLimits(FIELD_X_MIN, FIELD_X_MAX, FIELD_Y_MIN, FIELD_Y_MAX)
+from stats import Statistics
 
 
 def main() -> None:
@@ -46,15 +38,14 @@ def main() -> None:
     # Set up logging.
     setup_logging()
 
-    stats = Statistics(folder="stats")
+    stats = Statistics(folder_name="stats")
 
     # Set up the random number generator.
     rng = make_rng_time_seed()
     innov_db_body = multineat.InnovationDatabase()
     innov_db_brain = multineat.InnovationDatabase()
 
-    # TODO: calculate from field vars
-    plane_size = LIMITS.calculate_plane_size()
+    plane_size = config.LIMITS.calculate_plane_size()
 
     # Create an initial population, with pre-trained brains
     logging.info("Generating initial population.")
@@ -79,16 +70,18 @@ def main() -> None:
 
     logging.info("Adding initial robots to scene.")
     for robot in list(uuid_to_robot.values()):
-        pos = get_random_free_position(LIMITS, initial_positions)
+        pos = get_random_free_position(config.LIMITS, initial_positions)
         scene.add_robot(robot, pose=Pose(pos))
         initial_positions.append(pos)
 
     simulation_results = []
     # Create the simulator.
-    simulator = initialize_local_simulator(plane_size, headless=True, num_simulators=1)
+    simulator = initialize_local_simulator(
+        plane_size, headless=config.SIMULATION_HEADLESS, num_simulators=1
+    )
     met_before = set()
 
-    for generation in range(ITERATIONS):
+    for generation in range(config.ITERATIONS):
         logging.info(f"Starting generation {generation}.")
         simulation_result_list = simulate_scenes(
             simulator=simulator,
@@ -99,7 +92,7 @@ def main() -> None:
         simulation_result = SimulationResult(simulation_result_list)
         simulation_results.append(simulation_result)
 
-        stats.track_individuals(uuid_to_individual)
+        stats.track_individuals(uuid_to_individual, generation)
         stats.add_generation(generation, len(population))
         stats.flush_to_json(f"generation_{generation}")
 
@@ -183,7 +176,9 @@ def main() -> None:
                 ind.initial_generation == generation
                 and ind.get_robot_uuid() not in existing_robots_uuids
             ):
-                random_position = get_random_free_position(LIMITS, existing_positions)
+                random_position = get_random_free_position(
+                    config.LIMITS, existing_positions
+                )
                 scene.add_robot(
                     ind.develop(config.VISUALIZE_MAP), pose=Pose(random_position)
                 )
