@@ -1,13 +1,16 @@
 """Configuration parameters for this example."""
 
+from project2.utils.field_limits import FieldLimits
+
 DATABASE_FILE = "database.sqlite"
 NUM_SIMULATORS = 8
 EVALUATE = True
+SIMULATION_HEADLESS = True
 VISUALIZE_MAP = False  # Be careful when setting this to true when POPULATION_size > 1, as you will get plots for each individual.
 
 # Incubator settings
 INCUBATOR_TRAINING_BUDGET = (
-    100  # Number of RevDE iterations for pretraining, 0 disables pretraining
+    0  # Number of RevDE iterations for pretraining, 0 disables pretraining
 )
 
 # Population settings
@@ -18,3 +21,10 @@ MAX_AGE = 20  # This is the maximum age of an individual
 
 # Mating settings
 MATING_THRESHOLD = 1.2  # This is the threshold for mating
+
+# Simulation settings
+ITERATIONS = 10
+FIELD_X_MIN, FIELD_X_MAX = -10, 10  # Adjust based on your simulation size
+FIELD_Y_MIN, FIELD_Y_MAX = -10, 10
+
+LIMITS = FieldLimits(FIELD_X_MIN, FIELD_X_MAX, FIELD_Y_MIN, FIELD_Y_MAX)

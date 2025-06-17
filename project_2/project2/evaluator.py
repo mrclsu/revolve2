@@ -1,6 +1,6 @@
 """Evaluator class."""
 
-from genotype import Genotype
+from project2.genotype import Genotype
 
 from revolve2.experimentation.evolution.abstract_elements import Evaluator as Eval
 from revolve2.modular_robot_simulation import (

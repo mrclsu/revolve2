@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from revolve2.modular_robot._modular_robot import ModularRobot
 
-from genotype import Genotype
+from project2.genotype import Genotype
 
 import numpy as np
 

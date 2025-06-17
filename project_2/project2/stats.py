@@ -1,5 +1,5 @@
 from uuid import UUID
-from individual import Individual
+from project2.individual import Individual
 import json
 import pickle
 from pathlib import Path

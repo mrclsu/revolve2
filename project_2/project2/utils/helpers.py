@@ -2,9 +2,9 @@ import math
 import random
 from pyrr import Vector3
 from revolve2.simulators.mujoco_simulator import LocalSimulator
-from torus_simulation_handler import TorusSimulationTeleportationHandler
+from project2.torus_simulation_handler import TorusSimulationTeleportationHandler
 import logging
-from utils.field_limits import FieldLimits
+from project2.utils.field_limits import FieldLimits
 
 
 def initialize_local_simulator(

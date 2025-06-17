@@ -6,20 +6,14 @@ from uuid import UUID
 from pyrr import Vector3
 from revolve2.modular_robot._modular_robot import ModularRobot
 from revolve2.simulation.scene.vector2.vector2 import Vector2
-from genotype import Genotype
+
 import multineat
-from evaluator import Evaluator
-from individual import Individual, reproduce as reproduce_individual
-import config
 
 from revolve2.experimentation.logging import setup_logging
 from revolve2.experimentation.rng import make_rng_time_seed
 from revolve2.modular_robot_simulation import ModularRobotScene, simulate_scenes
 from revolve2.simulation.scene import Pose
-from revolve2.standards import (
-    terrains,
-    mate_selection,
-)
+from revolve2.standards import terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
 from itertools import combinations
 
@@ -27,10 +21,15 @@ from itertools import combinations
 import math
 import random
 
-from incubator import Incubator
-from utils.helpers import initialize_local_simulator, get_random_free_position
-from simulation_result import SimulationResult
-from stats import Statistics
+from project2.genotype import Genotype
+from project2.evaluator import Evaluator
+import project2.config as config
+from project2.individual import Individual, reproduce as reproduce_individual
+from project2.incubator import Incubator
+from project2.utils.helpers import initialize_local_simulator, get_random_free_position
+from project2.simulation_result import SimulationResult
+from project2.stats import Statistics
+import project2.mate_selection as mate_selection
 
 
 def main() -> None:

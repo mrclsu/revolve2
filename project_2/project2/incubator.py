@@ -1,7 +1,7 @@
 import logging
 from revolve2.simulation.scene.vector2.vector2 import Vector2
-from individual import Individual
-from genotype import Genotype
+from project2.individual import Individual
+from project2.genotype import Genotype
 
 import multineat
 import numpy as np
@@ -10,8 +10,8 @@ from revolve2.simulators.mujoco_simulator import LocalSimulator
 from revolve2.standards import terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
 
-from utils.helpers import initialize_local_simulator
-from simulation_result import SimulationResult
+from project2.utils.helpers import initialize_local_simulator
+from project2.simulation_result import SimulationResult
 
 
 class Incubator:

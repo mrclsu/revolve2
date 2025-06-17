@@ -1,6 +1,6 @@
 import random
 from revolve2.standards.genotype import Genotype
-from individual import Individual
+from project2.individual import Individual
 
 import numpy as np
 import multineat
