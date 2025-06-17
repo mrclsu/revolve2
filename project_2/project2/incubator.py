@@ -11,7 +11,7 @@ from revolve2.standards import terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
 
 from project2.utils.helpers import initialize_local_simulator
-from project2.simulation_result import SimulationResult
+from project2.simulation_result import SimulationResult, FitnessFunctionAlgorithm
 
 
 class Incubator:
@@ -147,14 +147,20 @@ class Incubator:
             scenes.append(scene)
 
         # Simulate all scenes
-        scene_states = simulate_scenes(
+        all_scene_states = simulate_scenes(
             simulator=self._simulator,
             batch_parameters=make_standard_batch_parameters(),
             scenes=scenes,
         )
 
-        simulation_result = SimulationResult(scene_states)
-        return simulation_result.fitness(robots)
+        fitness_values = []
+        for robot, scene_states in zip(robots, all_scene_states):
+            sim_res = SimulationResult(scene_states)
+            fitness_values.append(
+                sim_res.fitness([robot], FitnessFunctionAlgorithm.XY_DISPLACEMENT)
+            )
+
+        return fitness_values
 
     def incubate(self) -> list[Individual]:
         """

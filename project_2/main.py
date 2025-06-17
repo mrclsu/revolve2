@@ -19,15 +19,13 @@ from itertools import combinations
 
 # from revolve2.standards.mate_selection import Reproducer
 import math
-import random
+# import random
 
-from project2.genotype import Genotype
-from project2.evaluator import Evaluator
 import project2.config as config
 from project2.individual import Individual, reproduce as reproduce_individual
 from project2.incubator import Incubator
 from project2.utils.helpers import initialize_local_simulator, get_random_free_position
-from project2.simulation_result import SimulationResult
+from project2.simulation_result import SimulationResult, FitnessFunctionAlgorithm
 from project2.stats import Statistics
 import project2.mate_selection as mate_selection
 
@@ -87,9 +85,19 @@ def main() -> None:
             batch_parameters=make_standard_batch_parameters(),
             scenes=scene,
         )  # Process one scene at a time
+
         # TODO process each simulation state to simulate continuos mating
         simulation_result = SimulationResult(simulation_result_list)
         simulation_results.append(simulation_result)
+
+        current_robots = [robot for robot, _, _ in scene._robots]
+        fitness_values = simulation_result.fitness(
+            current_robots, config.FITNESS_FUNCTION_ALGORITHM
+        )
+
+        for robot, fitness in zip(current_robots, fitness_values):
+            if robot.uuid in uuid_to_individual:
+                uuid_to_individual[robot.uuid].fitness = fitness
 
         stats.track_individuals(uuid_to_individual, generation)
         stats.add_generation(generation, len(population))
@@ -132,7 +140,11 @@ def main() -> None:
                     met_before.add(pair)
                     print(f"New meeting: Robots {i} and {j} - Distance: {distance:.3f}")
 
-                    if mate_selection.mate_decision():
+                    if mate_selection.mate_decision(
+                        config.MATE_SELECTION_STRATEGY,
+                        uuid_to_individual[r1_uuid],
+                        uuid_to_individual[r2_uuid],
+                    ):
                         print("YAY mating!")
                         offspring = reproduce_individual(
                             uuid_to_individual[r1_uuid],

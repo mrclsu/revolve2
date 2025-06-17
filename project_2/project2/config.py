@@ -1,6 +1,8 @@
 """Configuration parameters for this example."""
 
 from project2.utils.field_limits import FieldLimits
+from project2.simulation_result import FitnessFunctionAlgorithm
+from project2.mate_selection import MateSelectionStrategy
 
 DATABASE_FILE = "database.sqlite"
 NUM_SIMULATORS = 8
@@ -28,3 +30,7 @@ FIELD_X_MIN, FIELD_X_MAX = -10, 10  # Adjust based on your simulation size
 FIELD_Y_MIN, FIELD_Y_MAX = -10, 10
 
 LIMITS = FieldLimits(FIELD_X_MIN, FIELD_X_MAX, FIELD_Y_MIN, FIELD_Y_MAX)
+
+# Fitness and mating settings
+FITNESS_FUNCTION_ALGORITHM = FitnessFunctionAlgorithm.XY_DISPLACEMENT
+MATE_SELECTION_STRATEGY = MateSelectionStrategy.MAX_FITNESS
