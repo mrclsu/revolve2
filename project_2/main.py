@@ -76,7 +76,7 @@ def main() -> None:
     simulator = initialize_local_simulator(
         plane_size, headless=config.SIMULATION_HEADLESS, num_simulators=1
     )
-    met_before = set()
+    met_before: dict[tuple, int] = {}
 
     for generation in range(config.ITERATIONS):
         logging.info(f"Starting generation {generation}.")
@@ -136,9 +136,12 @@ def main() -> None:
                 r1_uuid = existing_robots[i].uuid
                 r2_uuid = existing_robots[j].uuid
                 pair = tuple(sorted((r1_uuid, r2_uuid)))
-                if pair not in met_before:  # New meeting
-                    met_before.add(pair)
-                    print(f"New meeting: Robots {i} and {j} - Distance: {distance:.3f}")
+                if (
+                    pair not in met_before
+                    or generation - met_before[pair] >= config.MATING_COOLDOWN
+                ):
+                    met_before[pair] = generation
+                    print(f"Meeting: Robots {i} and {j} - Distance: {distance:.3f}")
 
                     if mate_selection.mate_decision(
                         config.MATE_SELECTION_STRATEGY,
