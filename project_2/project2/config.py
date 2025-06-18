@@ -3,6 +3,7 @@
 from project2.utils.field_limits import FieldLimits
 from project2.simulation_result import FitnessFunctionAlgorithm
 from project2.mate_selection import MateSelectionStrategy
+from project2.death_mechanism import DeathMechanism
 
 DATABASE_FILE = "database.sqlite"
 NUM_SIMULATORS = 8
@@ -34,3 +35,6 @@ MATE_SELECTION_STRATEGY = MateSelectionStrategy.MAX_FITNESS
 
 MATING_THRESHOLD = 1.2  # This is the threshold for mating
 MATING_COOLDOWN = 3  # This is the cooldown period for mating
+
+# Death mechanism settings
+DEATH_MECHANISM = DeathMechanism.MAX_AGE  # Default to existing behavior

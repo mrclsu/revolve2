@@ -28,6 +28,7 @@ from project2.utils.helpers import initialize_local_simulator, get_random_free_p
 from project2.simulation_result import SimulationResult, FitnessFunctionAlgorithm
 from project2.stats import Statistics
 import project2.mate_selection as mate_selection
+from project2.death_mechanism import apply_death_mechanism
 
 
 def main() -> None:
@@ -52,6 +53,7 @@ def main() -> None:
         innov_db_body=innov_db_body,
         innov_db_brain=innov_db_brain,
         rng=rng,
+        num_simulators=config.NUM_SIMULATORS,
     ).incubate()
 
     uuid_to_robot: dict[str, ModularRobot] = {}
@@ -160,24 +162,19 @@ def main() -> None:
                         uuid_to_individual[offspring_robot.uuid] = offspring
                         uuid_to_robot[offspring_robot.uuid] = offspring_robot
 
-        dead_individuals: list[Individual] = []
-        if len(population) > config.MIN_POPULATION_SIZE:
-            for ind in population:
-                if (ind.initial_generation + generation) > config.MAX_AGE:
-                    dead_individuals.append(ind)
-                    ind.set_final_generation(generation)
-                if len(population) - len(dead_individuals) < config.MIN_POPULATION_SIZE:
-                    break
+        # Apply death mechanism based on configuration
+        dead_individuals = apply_death_mechanism(
+            population=population,
+            current_generation=generation,
+            death_mechanism=config.DEATH_MECHANISM,
+            max_population_size=config.MAX_POPULATION_SIZE,
+            min_population_size=config.MIN_POPULATION_SIZE,
+            max_age=config.MAX_AGE,
+        )
 
         for ind in dead_individuals:
+            ind.set_final_generation(generation)
             population.remove(ind)
-
-        if len(population) > config.MAX_POPULATION_SIZE:
-            population.sort(key=lambda x: x.initial_generation, reverse=True)
-            population = population[: config.MAX_POPULATION_SIZE]
-            removed_individuals = population[config.MAX_POPULATION_SIZE :]
-            for ind in removed_individuals:
-                ind.set_final_generation(generation)
 
         for i, coordinate in enumerate(coordinates):
             robot = existing_robots[i]
