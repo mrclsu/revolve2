@@ -21,7 +21,7 @@ from itertools import combinations
 import math
 # import random
 
-import project2.config as config
+import project2.config as global_config
 from project2.individual import Individual, reproduce as reproduce_individual
 from project2.incubator import Incubator
 from project2.utils.helpers import initialize_local_simulator, get_random_free_position
@@ -31,7 +31,7 @@ import project2.mate_selection as mate_selection
 from project2.death_mechanism import apply_death_mechanism
 
 
-def main() -> None:
+def main(config: global_config) -> None:
     """Run the simulation."""
     # Set up logging.
     setup_logging()
@@ -197,4 +197,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(global_config)
