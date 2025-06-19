@@ -208,7 +208,6 @@ def main(config: global_config, folder_name: str = "stats") -> None:
 
 
 if __name__ == "__main__":
-    main(global_config)
     import argparse
 
     parser = argparse.ArgumentParser(
