@@ -34,7 +34,6 @@ FITNESS_FUNCTION_ALGORITHM = FitnessFunctionAlgorithm.XY_DISPLACEMENT
 MATE_SELECTION_STRATEGY = MateSelectionStrategy.MAX_FITNESS
 MATE_SELECTION_THRESHOLD = 0.125
 
-
 MATING_THRESHOLD = 1.2  # This is the threshold for mating
 MATING_COOLDOWN = 3  # This is the cooldown period for mating
 

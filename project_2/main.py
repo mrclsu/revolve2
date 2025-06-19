@@ -30,13 +30,15 @@ from project2.stats import Statistics
 import project2.mate_selection as mate_selection
 from project2.death_mechanism import apply_death_mechanism
 
+from project2.configs import config1, config2, config3, config4, config5, config6
 
-def main(config: global_config) -> None:
+
+def main(config: global_config, folder_name: str = "stats") -> None:
     """Run the simulation."""
     # Set up logging.
     setup_logging()
 
-    stats = Statistics(folder_name="stats")
+    stats = Statistics(folder_name=folder_name)
 
     # Set up the random number generator.
     rng = make_rng_time_seed()
@@ -143,14 +145,19 @@ def main(config: global_config) -> None:
                     or generation - met_before[pair] >= config.MATING_COOLDOWN
                 ):
                     met_before[pair] = generation
-                    print(f"Meeting: Robots {i} and {j} - Distance: {distance:.3f}")
+                    logging.info(
+                        f"Meeting: Robots {i} and {j} - Distance: {distance:.3f}"
+                    )
 
                     if mate_selection.mate_decision(
                         config.MATE_SELECTION_STRATEGY,
                         uuid_to_individual[r1_uuid],
                         uuid_to_individual[r2_uuid],
+                        population,
+                        config.MATE_SELECTION_THRESHOLD,
                     ):
-                        print("YAY mating!")
+                        logging.info("YAY mating!")
+
                         offspring = reproduce_individual(
                             uuid_to_individual[r1_uuid],
                             uuid_to_individual[r2_uuid],
@@ -198,3 +205,28 @@ def main(config: global_config) -> None:
 
 if __name__ == "__main__":
     main(global_config)
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Run simulation with different configs"
+    )
+    parser.add_argument(
+        "--config",
+        type=int,
+        choices=[1, 2, 3, 4, 5, 6],
+        default=1,
+        help="Config number to use (1-6)",
+    )
+    args = parser.parse_args()
+
+    config_map = {
+        1: (config1, "config1"),
+        2: (config2, "config2"),
+        3: (config3, "config3"),
+        4: (config4, "config4"),
+        5: (config5, "config5"),
+        6: (config6, "config6"),
+    }
+
+    selected_config, selected_folder = config_map[args.config]
+    main(selected_config, f"stats/{selected_folder}")
