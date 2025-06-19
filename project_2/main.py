@@ -158,6 +158,10 @@ def main(config: global_config, folder_name: str = "stats") -> None:
                     ):
                         logging.info("YAY mating!")
 
+                        # Increment offspring count for both parents
+                        stats.increment_offspring_count(r1_uuid)
+                        stats.increment_offspring_count(r2_uuid)
+
                         offspring = reproduce_individual(
                             uuid_to_individual[r1_uuid],
                             uuid_to_individual[r2_uuid],

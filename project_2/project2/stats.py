@@ -22,6 +22,17 @@ class Statistics:
     def get_population_size(self, generation: int) -> int:
         return self.generation_to_population_size[generation]
 
+    def increment_offspring_count(self, parent_uuid: UUID):
+        """Increment the offspring count for a given parent individual."""
+        str_uuid = str(parent_uuid)
+        if str_uuid not in self.robot_stats:
+            self.robot_stats[str_uuid] = {}
+
+        if "offspring_count" not in self.robot_stats[str_uuid]:
+            self.robot_stats[str_uuid]["offspring_count"] = 0
+
+        self.robot_stats[str_uuid]["offspring_count"] += 1
+
     def track_individuals(
         self, uuid_to_individual: dict[UUID, Individual], generation: int
     ):
@@ -47,6 +58,10 @@ class Statistics:
                     pickle.dumps(individual.genotype.brain), "base64"
                 ).decode(),
             }
+
+            # Initialize offspring_count if not present
+            if "offspring_count" not in self.robot_stats[str_uuid]:
+                self.robot_stats[str_uuid]["offspring_count"] = 0
 
             if "fitness" not in self.robot_stats[str_uuid]:
                 self.robot_stats[str_uuid]["fitness"] = {}
