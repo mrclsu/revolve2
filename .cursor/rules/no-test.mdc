@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: true
 ---
-Do not write tests for this project
+Do not write tests for this project, leave out testing from planning as well

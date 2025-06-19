@@ -22,17 +22,21 @@ def apply_max_age_death(
     max_age: int,
 ) -> list[Individual]:
     dead_individuals: list[Individual] = []
+    dead_robot_uuids = set()
 
     if len(population) > min_population_size:
         for ind in population:
             if (ind.initial_generation + current_generation) > max_age:
                 dead_individuals.append(ind)
+                dead_robot_uuids.add(ind.robot_uuid)
             if len(population) - len(dead_individuals) < min_population_size:
                 break
 
-    remaining_population = [ind for ind in population if ind not in dead_individuals]
+    remaining_population = [
+        ind for ind in population if ind.robot_uuid not in dead_robot_uuids
+    ]
     if len(remaining_population) > max_population_size:
-        remaining_population.sort(key=lambda x: x.initial_generation, reverse=True)
+        remaining_population.sort(key=lambda x: x.initial_generation)
         excess_count = len(remaining_population) - max_population_size
         additional_removals = remaining_population[:excess_count]
         dead_individuals.extend(additional_removals)

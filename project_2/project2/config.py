@@ -13,17 +13,17 @@ VISUALIZE_MAP = False  # Be careful when setting this to true when POPULATION_si
 
 # Incubator settings
 INCUBATOR_TRAINING_BUDGET = (
-    10  # Number of RevDE iterations for pretraining, 0 disables pretraining
+    100  # Number of RevDE iterations for pretraining, 0 disables pretraining
 )
 
 # Population settings
 POPULATION_SIZE = 30  # This is the size of the initial population
 MIN_POPULATION_SIZE = 25  # This is the minimum size of the population
 MAX_POPULATION_SIZE = 50  # This is the maximum size of the population
-MAX_AGE = 20  # This is the maximum age of an individual
+MAX_AGE = 30  # This is the maximum age of an individual
 
 # Simulation settings
-ITERATIONS = 10
+ITERATIONS = 400
 FIELD_X_MIN, FIELD_X_MAX = -10, 10  # Adjust based on your simulation size
 FIELD_Y_MIN, FIELD_Y_MAX = -10, 10
 
