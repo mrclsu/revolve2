@@ -28,12 +28,12 @@ def apply_max_age_death(
         for ind in population:
             if (ind.initial_generation + current_generation) > max_age:
                 dead_individuals.append(ind)
-                dead_robot_uuids.add(ind.robot_uuid)
+                dead_robot_uuids.add(ind.get_robot_uuid())
             if len(population) - len(dead_individuals) < min_population_size:
                 break
 
     remaining_population = [
-        ind for ind in population if ind.robot_uuid not in dead_robot_uuids
+        ind for ind in population if ind.get_robot_uuid() not in dead_robot_uuids
     ]
     if len(remaining_population) > max_population_size:
         remaining_population.sort(key=lambda x: x.initial_generation)
