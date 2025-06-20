@@ -5,11 +5,22 @@ Creates three plots:
 1. Population size over generations
 2. Population size with births/deaths overlay
 3. Average age of robots across generations
+
+Usage:
+    python plot_evolution_stats.py <file_or_folder_path>
+
+Examples:
+    python plot_evolution_stats.py saved_stats/very_first_implementation.json
+    python plot_evolution_stats.py saved_stats/early_results_6_confs
 """
 
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import sys
+import argparse
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -70,7 +81,7 @@ def calculate_age_statistics_per_generation(robot_stats, max_generation):
     return avg_ages, median_ages, max_ages
 
 
-def plot_population_size(generation_to_population_size):
+def plot_population_size(generation_to_population_size, config_name=""):
     """Create a plot showing population size over generations."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
     population_sizes = [generation_to_population_size[str(gen)] for gen in generations]
@@ -79,13 +90,18 @@ def plot_population_size(generation_to_population_size):
     plt.plot(generations, population_sizes, "b-", linewidth=2, marker="o", markersize=3)
     plt.xlabel("Generation")
     plt.ylabel("Population Size")
-    plt.title("Population Size Over Generations")
+    title = f"Population Size Over Generations"
+    if config_name:
+        title += f" - {config_name}"
+    plt.title(title)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     return plt.gcf()
 
 
-def plot_population_with_births_deaths(generation_to_population_size, robot_stats):
+def plot_population_with_births_deaths(
+    generation_to_population_size, robot_stats, config_name=""
+):
     """Create a plot showing population size with births/deaths overlay."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
     population_sizes = [generation_to_population_size[str(gen)] for gen in generations]
@@ -135,12 +151,15 @@ def plot_population_with_births_deaths(generation_to_population_size, robot_stat
     ax1.legend(loc="upper left")
     ax2.legend(loc="upper right")
 
-    plt.title("Population Size with Births and Deaths Over Generations")
+    title = "Population Size with Births and Deaths Over Generations"
+    if config_name:
+        title += f" - {config_name}"
+    plt.title(title)
     plt.tight_layout()
     return fig
 
 
-def plot_average_age(generation_to_population_size, robot_stats):
+def plot_average_age(generation_to_population_size, robot_stats, config_name=""):
     """Create a plot showing average, median, and maximum age of robots across generations."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
     max_generation = max(generations)
@@ -184,14 +203,17 @@ def plot_average_age(generation_to_population_size, robot_stats):
     )
     plt.xlabel("Generation")
     plt.ylabel("Age (generations)")
-    plt.title("Mean, Median, and Oldest Age of Robots Across Generations")
+    title = "Mean, Median, and Oldest Age of Robots Across Generations"
+    if config_name:
+        title += f" - {config_name}"
+    plt.title(title)
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     return plt.gcf()
 
 
-def plot_births_deaths_only(generation_to_population_size, robot_stats):
+def plot_births_deaths_only(generation_to_population_size, robot_stats, config_name=""):
     """Create a plot showing only births and deaths per generation."""
     generations = sorted([int(gen) for gen in generation_to_population_size.keys()])
 
@@ -214,7 +236,10 @@ def plot_births_deaths_only(generation_to_population_size, robot_stats):
 
     plt.xlabel("Generation")
     plt.ylabel("Count")
-    plt.title("Births and Deaths per Generation")
+    title = "Births and Deaths per Generation"
+    if config_name:
+        title += f" - {config_name}"
+    plt.title(title)
     plt.legend()
     plt.grid(True, axis="y", alpha=0.3)
     plt.xticks(
@@ -224,7 +249,7 @@ def plot_births_deaths_only(generation_to_population_size, robot_stats):
     return plt.gcf()
 
 
-def print_summary_stats(generation_to_population_size, robot_stats):
+def print_summary_stats(generation_to_population_size, robot_stats, config_name=""):
     """Print summary statistics."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
     population_sizes = [generation_to_population_size[str(gen)] for gen in generations]
@@ -234,7 +259,10 @@ def print_summary_stats(generation_to_population_size, robot_stats):
         robot_stats, max(generations)
     )
 
-    print("=== Evolution Summary Statistics ===")
+    header = "=== Evolution Summary Statistics ==="
+    if config_name:
+        header = f"=== Evolution Summary Statistics - {config_name} ==="
+    print(header)
     print(f"Total generations: {max(generations) + 1}")
     print(f"Initial population: {population_sizes[0]}")
     print(f"Final population: {population_sizes[-1]}")
@@ -257,42 +285,145 @@ def print_summary_stats(generation_to_population_size, robot_stats):
     print(f"Maximum oldest age reached: {max(max_ages.values()):.2f} generations")
 
 
-def main():
+def process_single_file(json_file_path, output_dir=None, config_name=""):
+    """Process a single JSON file and generate all plots."""
+    print(f"\nProcessing {json_file_path}...")
+
     # Load data
-    data = load_data("saved_stats/very_first_implementation.json")
+    data = load_data(json_file_path)
     generation_to_population_size = data["generation_to_population_size"]
     robot_stats = data["robot_stats"]
 
     # Print summary statistics
-    print_summary_stats(generation_to_population_size, robot_stats)
-    print()
+    print_summary_stats(generation_to_population_size, robot_stats, config_name)
 
-    # Create plots
+    # Set up output directory
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    # Create and save plots
     print("Creating population size plot...")
-    fig1 = plot_population_size(generation_to_population_size)
-    plt.savefig("population_size_over_time.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    fig1 = plot_population_size(generation_to_population_size, config_name)
+    output_path = (
+        os.path.join(output_dir, "population_size_over_time.png")
+        if output_dir
+        else "population_size_over_time.png"
+    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
 
     print("Creating population with births/deaths plot...")
     fig2 = plot_population_with_births_deaths(
-        generation_to_population_size, robot_stats
+        generation_to_population_size, robot_stats, config_name
     )
-    plt.savefig("population_with_births_deaths.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    output_path = (
+        os.path.join(output_dir, "population_with_births_deaths.png")
+        if output_dir
+        else "population_with_births_deaths.png"
+    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
 
     print("Creating average age plot...")
-    fig3 = plot_average_age(generation_to_population_size, robot_stats)
-    plt.savefig("average_age_over_time.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    fig3 = plot_average_age(generation_to_population_size, robot_stats, config_name)
+    output_path = (
+        os.path.join(output_dir, "average_age_over_time.png")
+        if output_dir
+        else "average_age_over_time.png"
+    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
 
     print("Creating births and deaths plot...")
-    fig4 = plot_births_deaths_only(generation_to_population_size, robot_stats)
-    plt.savefig("births_deaths_per_generation.png", dpi=300, bbox_inches="tight")
-    plt.show()
-
-    print(
-        "Plots saved as 'population_size_over_time.png', 'population_with_births_deaths.png', 'average_age_over_time.png', and 'births_deaths_per_generation.png'"
+    fig4 = plot_births_deaths_only(
+        generation_to_population_size, robot_stats, config_name
     )
+    output_path = (
+        os.path.join(output_dir, "births_deaths_per_generation.png")
+        if output_dir
+        else "births_deaths_per_generation.png"
+    )
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+    if output_dir:
+        print(f"Plots saved in '{output_dir}' directory")
+    else:
+        print("Plots saved in current directory")
+
+
+def process_folder(folder_path):
+    """Process all JSON files in a folder."""
+    folder_path = Path(folder_path)
+    if not folder_path.exists():
+        print(f"Error: Folder '{folder_path}' does not exist.")
+        return
+
+    # Find all JSON files in the folder
+    json_files = list(folder_path.glob("*.json"))
+
+    if not json_files:
+        print(f"No JSON files found in '{folder_path}'")
+        return
+
+    print(f"Found {len(json_files)} JSON files in '{folder_path}'")
+
+    # Create main output directory
+    output_base_dir = folder_path / "plots"
+    output_base_dir.mkdir(exist_ok=True)
+
+    # Process each JSON file
+    for json_file in sorted(json_files):
+        # Create config name from filename (remove .json extension)
+        config_name = json_file.stem
+
+        # Create subdirectory for this config
+        config_output_dir = output_base_dir / config_name
+
+        # Process the file
+        process_single_file(json_file, config_output_dir, config_name)
+
+    print(f"\nAll plots have been generated and saved in '{output_base_dir}'")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate evolution statistics plots from JSON data files or folders",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s saved_stats/very_first_implementation.json
+  %(prog)s saved_stats/early_results_6_confs
+        """,
+    )
+    parser.add_argument(
+        "path", help="Path to a JSON file or folder containing JSON files"
+    )
+
+    args = parser.parse_args()
+
+    path = Path(args.path)
+
+    if not path.exists():
+        print(f"Error: Path '{path}' does not exist.")
+        sys.exit(1)
+
+    if path.is_file():
+        # Process single file
+        if path.suffix.lower() != ".json":
+            print(f"Error: File '{path}' is not a JSON file.")
+            sys.exit(1)
+
+        config_name = path.stem
+        process_single_file(path, config_name=config_name)
+
+    elif path.is_dir():
+        # Process folder
+        process_folder(path)
+
+    else:
+        print(f"Error: '{path}' is neither a file nor a directory.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
