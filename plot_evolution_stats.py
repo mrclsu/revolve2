@@ -81,6 +81,41 @@ def calculate_age_statistics_per_generation(robot_stats, max_generation):
     return avg_ages, median_ages, max_ages
 
 
+def calculate_fitness_statistics_per_generation(robot_stats, max_generation):
+    """Calculate the average, median, and maximum fitness per generation."""
+    fitness_per_generation = defaultdict(list)
+
+    for robot_id, stats in robot_stats.items():
+        # Check if this robot has fitness data
+        if "fitness" in stats and isinstance(stats["fitness"], dict):
+            # Each generation this robot was evaluated, add its fitness
+            for gen_str, fitness_value in stats["fitness"].items():
+                gen = int(gen_str)
+                if fitness_value is not None:  # Skip None fitness values
+                    fitness_per_generation[gen].append(fitness_value)
+
+    # Calculate average, median, and maximum fitness per generation
+    avg_fitness = {}
+    median_fitness = {}
+    max_fitness = {}
+    min_fitness = {}
+
+    for gen in range(max_generation + 1):
+        if fitness_per_generation[gen]:
+            avg_fitness[gen] = np.mean(fitness_per_generation[gen])
+            median_fitness[gen] = np.median(fitness_per_generation[gen])
+            max_fitness[gen] = np.max(fitness_per_generation[gen])
+            min_fitness[gen] = np.min(fitness_per_generation[gen])
+        else:
+            # No fitness data for this generation
+            avg_fitness[gen] = None
+            median_fitness[gen] = None
+            max_fitness[gen] = None
+            min_fitness[gen] = None
+
+    return avg_fitness, median_fitness, max_fitness, min_fitness
+
+
 def plot_population_size(generation_to_population_size, config_name=""):
     """Create a plot showing population size over generations."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
@@ -249,6 +284,83 @@ def plot_births_deaths_only(generation_to_population_size, robot_stats, config_n
     return plt.gcf()
 
 
+def plot_fitness_statistics(generation_to_population_size, robot_stats, config_name=""):
+    """Create a plot showing average, median, and maximum fitness across generations."""
+    generations = [int(gen) for gen in generation_to_population_size.keys()]
+    max_generation = max(generations)
+
+    avg_fitness, median_fitness, max_fitness, min_fitness = (
+        calculate_fitness_statistics_per_generation(robot_stats, max_generation)
+    )
+
+    # Extract fitness values for each generation, filtering out None values
+    generations_with_data = []
+    avg_fitness_values = []
+    median_fitness_values = []
+    max_fitness_values = []
+    min_fitness_values = []
+
+    for gen in generations:
+        if avg_fitness[gen] is not None:
+            generations_with_data.append(gen)
+            avg_fitness_values.append(avg_fitness[gen])
+            median_fitness_values.append(median_fitness[gen])
+            max_fitness_values.append(max_fitness[gen])
+            min_fitness_values.append(min_fitness[gen])
+
+    if not generations_with_data:
+        print("Warning: No fitness data found in robot_stats")
+        return None
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(
+        generations_with_data,
+        avg_fitness_values,
+        "b-",
+        linewidth=2,
+        marker="s",
+        markersize=4,
+        label="Mean Fitness",
+    )
+    plt.plot(
+        generations_with_data,
+        median_fitness_values,
+        "orange",
+        linewidth=2,
+        marker="o",
+        markersize=4,
+        label="Median Fitness",
+    )
+    plt.plot(
+        generations_with_data,
+        max_fitness_values,
+        "g-",
+        linewidth=2,
+        marker="^",
+        markersize=4,
+        label="Max Fitness",
+    )
+    plt.plot(
+        generations_with_data,
+        min_fitness_values,
+        "r-",
+        linewidth=2,
+        marker="v",
+        markersize=4,
+        label="Min Fitness",
+    )
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness")
+    title = "Fitness Statistics Across Generations"
+    if config_name:
+        title += f" - {config_name}"
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    return plt.gcf()
+
+
 def print_summary_stats(generation_to_population_size, robot_stats, config_name=""):
     """Print summary statistics."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
@@ -257,6 +369,11 @@ def print_summary_stats(generation_to_population_size, robot_stats, config_name=
     births, deaths = calculate_births_deaths(robot_stats)
     avg_ages, median_ages, max_ages = calculate_age_statistics_per_generation(
         robot_stats, max(generations)
+    )
+
+    # Calculate fitness statistics
+    avg_fitness, median_fitness, max_fitness, min_fitness = (
+        calculate_fitness_statistics_per_generation(robot_stats, max(generations))
     )
 
     header = "=== Evolution Summary Statistics ==="
@@ -283,6 +400,21 @@ def print_summary_stats(generation_to_population_size, robot_stats, config_name=
     print(f"Maximum average age reached: {max(avg_ages.values()):.2f} generations")
     print(f"Maximum median age reached: {max(median_ages.values()):.2f} generations")
     print(f"Maximum oldest age reached: {max(max_ages.values()):.2f} generations")
+
+    # Print fitness statistics if available
+    fitness_values = [f for f in avg_fitness.values() if f is not None]
+    if fitness_values:
+        final_gen_fitness = avg_fitness[max(generations)]
+        if final_gen_fitness is not None:
+            print(f"Average fitness in final generation: {final_gen_fitness:.4f}")
+
+        max_avg_fitness = max(fitness_values)
+        max_fitness_values = [f for f in max_fitness.values() if f is not None]
+        if max_fitness_values:
+            print(f"Best fitness ever achieved: {max(max_fitness_values):.4f}")
+            print(f"Best average fitness: {max_avg_fitness:.4f}")
+    else:
+        print("No fitness data available in robot_stats")
 
 
 def process_single_file(json_file_path, output_dir=None, config_name=""):
@@ -345,6 +477,21 @@ def process_single_file(json_file_path, output_dir=None, config_name=""):
     )
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
+
+    print("Creating fitness statistics plot...")
+    fig5 = plot_fitness_statistics(
+        generation_to_population_size, robot_stats, config_name
+    )
+    if fig5 is not None:
+        output_path = (
+            os.path.join(output_dir, "fitness_statistics_over_time.png")
+            if output_dir
+            else "fitness_statistics_over_time.png"
+        )
+        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        print("Skipped fitness plot due to missing fitness data")
 
     if output_dir:
         print(f"Plots saved in '{output_dir}' directory")
