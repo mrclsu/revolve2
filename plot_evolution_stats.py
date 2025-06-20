@@ -116,6 +116,30 @@ def calculate_fitness_statistics_per_generation(robot_stats, max_generation):
     return avg_fitness, median_fitness, max_fitness, min_fitness
 
 
+def calculate_offspring_counts(robot_stats):
+    """Calculate how many offspring each robot produced."""
+    offspring_counts = {}
+    robot_to_index = {}
+    index_to_robot = {}
+
+    # Create a mapping from robot IDs to simple indices
+    robot_ids = sorted(robot_stats.keys())
+    for i, robot_id in enumerate(robot_ids):
+        robot_to_index[robot_id] = i
+        index_to_robot[i] = robot_id
+
+    # Extract offspring counts directly from robot stats
+    for robot_id, stats in robot_stats.items():
+        robot_index = robot_to_index[robot_id]
+        # Use the offspring_count field that's already in the stats
+        if "offspring_count" in stats:
+            offspring_counts[robot_index] = stats["offspring_count"]
+        else:
+            offspring_counts[robot_index] = 0
+
+    return offspring_counts, robot_to_index, index_to_robot
+
+
 def plot_population_size(generation_to_population_size, config_name=""):
     """Create a plot showing population size over generations."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
@@ -361,6 +385,67 @@ def plot_fitness_statistics(generation_to_population_size, robot_stats, config_n
     return plt.gcf()
 
 
+def plot_offspring_distribution(robot_stats, config_name=""):
+    """Create a plot showing how many offspring each robot produced."""
+    offspring_counts, robot_to_index, index_to_robot = calculate_offspring_counts(
+        robot_stats
+    )
+
+    if not offspring_counts:
+        print("Warning: No offspring data found")
+        return None
+
+    # Prepare data for plotting
+    robot_indices = sorted(offspring_counts.keys())
+    offspring_values = [offspring_counts[idx] for idx in robot_indices]
+
+    # Only plot robots that actually produced offspring for better readability
+    non_zero_indices = []
+    non_zero_values = []
+    for idx, count in zip(robot_indices, offspring_values):
+        if count > 0:
+            non_zero_indices.append(idx)
+            non_zero_values.append(count)
+
+    if not non_zero_indices:
+        print("Warning: No robots produced offspring")
+        return None
+
+    plt.figure(figsize=(14, 6))
+
+    # Create bar plot
+    bars = plt.bar(
+        range(len(non_zero_indices)), non_zero_values, alpha=0.7, color="steelblue"
+    )
+
+    # Customize the plot
+    plt.xlabel("Robot Index")
+    plt.ylabel("Number of Offspring")
+    title = "Offspring Distribution per Robot"
+    if config_name:
+        title += f" - {config_name}"
+    plt.title(title)
+    plt.grid(True, axis="y", alpha=0.3)
+
+    # Set x-axis labels to show robot indices
+    plt.xticks(range(len(non_zero_indices)), non_zero_indices, rotation=45)
+
+    # Add value labels on top of bars if not too many
+    if len(non_zero_indices) <= 50:
+        for i, (bar, value) in enumerate(zip(bars, non_zero_values)):
+            plt.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.1,
+                str(value),
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
+
+    plt.tight_layout()
+    return plt.gcf()
+
+
 def print_summary_stats(generation_to_population_size, robot_stats, config_name=""):
     """Print summary statistics."""
     generations = [int(gen) for gen in generation_to_population_size.keys()]
@@ -374,6 +459,11 @@ def print_summary_stats(generation_to_population_size, robot_stats, config_name=
     # Calculate fitness statistics
     avg_fitness, median_fitness, max_fitness, min_fitness = (
         calculate_fitness_statistics_per_generation(robot_stats, max(generations))
+    )
+
+    # Calculate offspring statistics
+    offspring_counts, robot_to_index, index_to_robot = calculate_offspring_counts(
+        robot_stats
     )
 
     header = "=== Evolution Summary Statistics ==="
@@ -415,6 +505,22 @@ def print_summary_stats(generation_to_population_size, robot_stats, config_name=
             print(f"Best average fitness: {max_avg_fitness:.4f}")
     else:
         print("No fitness data available in robot_stats")
+
+    # Print offspring statistics
+    if offspring_counts:
+        offspring_values = list(offspring_counts.values())
+        reproducing_robots = len([c for c in offspring_values if c > 0])
+        print(f"Total robots that reproduced: {reproducing_robots}")
+        if offspring_values:
+            print(
+                f"Average offspring per reproducing robot: {np.mean([c for c in offspring_values if c > 0]):.2f}"
+            )
+            print(f"Max offspring by single robot: {max(offspring_values)}")
+            print(
+                f"Reproduction rate: {reproducing_robots / len(robot_stats) * 100:.1f}%"
+            )
+    else:
+        print("No offspring data available")
 
 
 def process_single_file(json_file_path, output_dir=None, config_name=""):
@@ -492,6 +598,19 @@ def process_single_file(json_file_path, output_dir=None, config_name=""):
         plt.close()
     else:
         print("Skipped fitness plot due to missing fitness data")
+
+    print("Creating offspring distribution plot...")
+    fig6 = plot_offspring_distribution(robot_stats, config_name)
+    if fig6 is not None:
+        output_path = (
+            os.path.join(output_dir, "offspring_distribution.png")
+            if output_dir
+            else "offspring_distribution.png"
+        )
+        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        print("Skipped offspring plot due to missing offspring data")
 
     if output_dir:
         print(f"Plots saved in '{output_dir}' directory")
