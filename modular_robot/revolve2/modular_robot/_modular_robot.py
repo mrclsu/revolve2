@@ -11,6 +11,7 @@ class ModularRobot:
 
     body: Body
     brain: Brain
+    has_teleported: bool
 
     def __init__(self, body: Body, brain: Brain):
         """

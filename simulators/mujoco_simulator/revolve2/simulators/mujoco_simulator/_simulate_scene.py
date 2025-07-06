@@ -9,7 +9,9 @@ from pyrr import Vector3
 
 from revolve2.simulation.scene import Scene, SimulationState
 from revolve2.simulation.simulator import RecordSettings
-from revolve2.simulators.mujoco_simulator._abstraction_to_mujoco_mapping import AbstractionToMujocoMapping
+from revolve2.simulators.mujoco_simulator._abstraction_to_mujoco_mapping import (
+    AbstractionToMujocoMapping,
+)
 from revolve2.simulators.mujoco_simulator._teleport_handler import TeleportHandler
 
 from ._control_interface_impl import ControlInterfaceImpl
@@ -58,7 +60,6 @@ def simulate_scene(
     """
     logging.info(f"Simulating scene {scene_id}")
 
-
     """Define mujoco data and model objects for simuating."""
     model, mapping = scene_to_model(
         scene, simulation_timestep, cast_shadows=cast_shadows, fast_sim=fast_sim
@@ -82,9 +83,9 @@ def simulate_scene(
     last_sample_time = 0.0
     last_video_time = 0.0  # time at which last video frame was saved
 
-    simulation_states: list[SimulationState] = (
-        []
-    )  # The measured states of the simulation
+    simulation_states: list[
+        SimulationState
+    ] = []  # The measured states of the simulation
 
     """If we dont have cameras and the backend is not set we go to the default GLFW."""
     if len(mapping.camera_sensor.values()) == 0:
@@ -151,16 +152,32 @@ def simulate_scene(
     while (time := data.time) < (
         float("inf") if simulation_time is None else simulation_time
     ):
-
         # do control if it is time
         if time >= last_control_time + control_step:
             last_control_time = math.floor(time / control_step) * control_step
+
+            # Reset teleportation flags for all modular robots at the start of each control step
+            if hasattr(scene.handler, "modular_robot_to_multi_body_system_mapping"):
+                for (
+                    robot_uuid_key
+                ) in scene.handler.modular_robot_to_multi_body_system_mapping.keys():
+                    robot_uuid_key.value.has_teleported = False
 
             simulation_state = SimulationStateImpl(
                 data=data, abstraction_to_mujoco_mapping=mapping, camera_views=images
             )
             scene.handler.handle(simulation_state, control_interface, control_step)
-            _handle_teleportation(model, data, mapping, teleport_handlers, images)
+
+            # Extract modular robot mapping if available
+            modular_robot_mapping = None
+            if hasattr(scene.handler, "modular_robot_to_multi_body_system_mapping"):
+                modular_robot_mapping = (
+                    scene.handler.modular_robot_to_multi_body_system_mapping
+                )
+
+            _handle_teleportation(
+                model, data, mapping, teleport_handlers, images, modular_robot_mapping
+            )
 
         # sample state if it is time
         if sample_step is not None:
@@ -230,73 +247,105 @@ def simulate_scene(
     logging.info(f"Scene {scene_id} done.")
     return simulation_states
 
-def _handle_teleportation(model, data, mapping: AbstractionToMujocoMapping, teleport_handlers: list[TeleportHandler], images: dict):
+
+def _handle_teleportation(
+    model,
+    data,
+    mapping: AbstractionToMujocoMapping,
+    teleport_handlers: list[TeleportHandler],
+    images: dict,
+    modular_robot_to_multi_body_system_mapping: dict = None,
+):
     # Check for teleportation after handling control
     # Loop through each multi-body system (robot) in the scene
     for mbs_uuid, mbs_mujoco in mapping.multi_body_system.items():
         # Get the robot's body ID in MuJoCo
         # The id field is the base body ID of the multi-body system
         body_id = mbs_mujoco.id
-        
+
         # Get current robot position from simulation state
         simulation_state = SimulationStateImpl(
             data=data, abstraction_to_mujoco_mapping=mapping, camera_views=images
         )
-        
+
         # Use the multi-body system pose to get position
         pose = simulation_state.get_multi_body_system_pose(mbs_uuid.value)
         position = Vector3(pose.position)
-        
+
         # Check each teleport handler to see if the robot should be teleported
         for handler in teleport_handlers:
             new_position = handler.handle(position)
             if new_position is not None:
                 logging.info(f"Teleporting robot from {position} to {new_position}")
-                
+
+                # Mark the modular robot as teleported if mapping is available
+                if modular_robot_to_multi_body_system_mapping is not None:
+                    # Find the modular robot that corresponds to this multi-body system
+                    for (
+                        robot_uuid_key,
+                        multi_body_system,
+                    ) in modular_robot_to_multi_body_system_mapping.items():
+                        if multi_body_system.uuid == mbs_uuid.value.uuid:
+                            # Mark the robot as teleported
+                            robot_uuid_key.value.has_teleported = True
+                            logging.info(
+                                f"Marked modular robot {robot_uuid_key.value.uuid} as teleported"
+                            )
+                            break
+
                 # Find the freejoint for this body in the model
                 joint_found = False
                 for i in range(model.njnt):
                     # Check if this is a free joint connected to our body
-                    if model.jnt_type[i] == mujoco.mjtJoint.mjJNT_FREE and model.jnt_bodyid[i] == body_id:
+                    if (
+                        model.jnt_type[i] == mujoco.mjtJoint.mjJNT_FREE
+                        and model.jnt_bodyid[i] == body_id
+                    ):
                         joint_found = True
                         # Get the qpos address for this joint
                         qpos_addr = model.jnt_qposadr[i]
-                        
-                        logging.info(f"Found joint for body {body_id} at qpos index {qpos_addr}")
-                        
+
+                        logging.info(
+                            f"Found joint for body {body_id} at qpos index {qpos_addr}"
+                        )
+
                         # Log previous position
                         prev_x = data.qpos[qpos_addr]
                         prev_y = data.qpos[qpos_addr + 1]
                         prev_z = data.qpos[qpos_addr + 2]
                         logging.info(f"Previous qpos: ({prev_x}, {prev_y}, {prev_z})")
-                        
+
                         # Set the position part of the free joint's qpos (first 3 values)
-                        data.qpos[qpos_addr] = new_position.x  
+                        data.qpos[qpos_addr] = new_position.x
                         data.qpos[qpos_addr + 1] = new_position.y
                         data.qpos[qpos_addr + 2] = new_position.z
-                        
+
                         # Log new position
-                        logging.info(f"Updated qpos to: ({data.qpos[qpos_addr]}, {data.qpos[qpos_addr + 1]}, {data.qpos[qpos_addr + 2]})")
-                        
+                        logging.info(
+                            f"Updated qpos to: ({data.qpos[qpos_addr]}, {data.qpos[qpos_addr + 1]}, {data.qpos[qpos_addr + 2]})"
+                        )
+
                         # Reset velocities for this joint
                         # First find the dof address for this joint
                         dof_addr = model.jnt_dofadr[i]
-                        
+
                         # Set linear velocities to zero (first 3 values of qvel)
                         data.qvel[dof_addr] = 0.0
                         data.qvel[dof_addr + 1] = 0.0
                         data.qvel[dof_addr + 2] = 0.0
-                        
+
                         # Forward to update simulation state
                         mujoco.mj_forward(model, data)
                         break
-                
+
                 if not joint_found:
                     logging.error(f"Failed to find free joint for body ID {body_id}")
                     # Debug info - print all joints and their body IDs
                     for i in range(model.njnt):
                         joint_type = model.jnt_type[i]
                         joint_body = model.jnt_bodyid[i]
-                        logging.error(f"Joint {i}: type={joint_type}, body={joint_body}")
-                        
+                        logging.error(
+                            f"Joint {i}: type={joint_type}, body={joint_body}"
+                        )
+
                 break  # Only apply the first handler that returns a new position

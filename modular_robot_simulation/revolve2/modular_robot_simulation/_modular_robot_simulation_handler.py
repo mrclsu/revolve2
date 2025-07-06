@@ -1,8 +1,11 @@
+from revolve2.modular_robot import ModularRobot
 from revolve2.modular_robot.brain import BrainInstance
 from revolve2.simulation.scene import (
     ControlInterface,
+    MultiBodySystem,
     SimulationHandler,
     SimulationState,
+    UUIDKey,
 )
 
 from ._build_multi_body_systems import BodyToMultiBodySystemMapping
@@ -14,10 +17,14 @@ class ModularRobotSimulationHandler(SimulationHandler):
     """Implements the simulation handler for a modular robot scene."""
 
     _brains: list[tuple[BrainInstance, BodyToMultiBodySystemMapping]]
+    _modular_robot_to_multi_body_system_mapping: dict[
+        UUIDKey[ModularRobot], MultiBodySystem
+    ]
 
     def __init__(self) -> None:
         """Initialize this object."""
         self._brains = []
+        self._modular_robot_to_multi_body_system_mapping = {}
 
     def add_robot(
         self,
@@ -31,6 +38,27 @@ class ModularRobotSimulationHandler(SimulationHandler):
         :param body_to_multi_body_system_mapping: A mapping from body to multi-body system
         """
         self._brains.append((brain_instance, body_to_multi_body_system_mapping))
+
+    def set_modular_robot_to_multi_body_system_mapping(
+        self, mapping: dict[UUIDKey[ModularRobot], MultiBodySystem]
+    ) -> None:
+        """
+        Set the mapping from modular robots to multi-body systems.
+
+        :param mapping: The mapping to set.
+        """
+        self._modular_robot_to_multi_body_system_mapping = mapping
+
+    @property
+    def modular_robot_to_multi_body_system_mapping(
+        self,
+    ) -> dict[UUIDKey[ModularRobot], MultiBodySystem]:
+        """
+        Get the mapping from modular robots to multi-body systems.
+
+        :returns: The mapping.
+        """
+        return self._modular_robot_to_multi_body_system_mapping
 
     def handle(
         self,

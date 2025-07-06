@@ -89,4 +89,9 @@ class ModularRobotScene:
         for interactive_object in self._interactive_objects:
             scene.add_multi_body_system(interactive_object)
 
+        # Set the mapping on the handler so it can be accessed during teleportation
+        handler.set_modular_robot_to_multi_body_system_mapping(
+            modular_robot_to_multi_body_system_mapping
+        )
+
         return scene, modular_robot_to_multi_body_system_mapping
