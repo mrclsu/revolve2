@@ -1,6 +1,7 @@
 """Main script for the example."""
 
 import logging
+from project2.config import Config
 from uuid import UUID
 
 from pyrr import Vector3
@@ -21,7 +22,7 @@ from itertools import combinations
 import math
 # import random
 
-import project2.config as global_config
+
 from project2.individual import Individual, reproduce as reproduce_individual
 from project2.incubator import Incubator
 from project2.utils.helpers import initialize_local_simulator, get_random_free_position
@@ -30,10 +31,8 @@ from project2.stats import Statistics
 import project2.mate_selection as mate_selection
 from project2.death_mechanism import apply_death_mechanism
 
-from project2.configs import config1, config2, config3, config4, config5, config6
 
-
-def main(config: global_config, folder_name: str = "stats") -> None:
+def main(config: Config, folder_name: str = "stats") -> None:
     """Run the simulation."""
     # Set up logging.
     setup_logging()
@@ -215,21 +214,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--config",
-        type=int,
-        choices=[1, 2, 3, 4, 5, 6],
-        default=1,
-        help="Config number to use (1-6)",
+        type=str,
+        choices=["config1", "config2", "config3", "config4", "config5", "config6"],
+        default="config1",
+        help="Config name to use (config1, config2, etc.)",
     )
     args = parser.parse_args()
 
-    config_map = {
-        1: (config1, "config1"),
-        2: (config2, "config2"),
-        3: (config3, "config3"),
-        4: (config4, "config4"),
-        5: (config5, "config5"),
-        6: (config6, "config6"),
-    }
+    # Create a Config instance with the specified config name
+    config = Config(args.config)
 
-    selected_config, selected_folder = config_map[args.config]
-    main(selected_config, f"stats/{selected_folder}")
+    main(config, f"stats/{args.config}")
