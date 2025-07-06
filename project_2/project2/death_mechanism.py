@@ -50,6 +50,7 @@ def apply_lowest_fitness_death(
     current_generation: int,
     max_population_size: int,
     min_population_size: int,
+    generation_interval: int = 5,
 ) -> list[Individual]:
     eligible_for_death = [
         ind
@@ -57,12 +58,19 @@ def apply_lowest_fitness_death(
         if ind.initial_generation != current_generation and ind.fitness is not None
     ]
 
-    target_removals = len(population) - max_population_size
-    if target_removals <= 0:
-        logging.info("Fitness-based death: no removals needed")
-        return []
-
     max_removals = len(population) - min_population_size
+    target_removals = 0
+
+    if current_generation > 0 and current_generation % generation_interval == 0:
+        logging.info("Fitness-based death: removing bottom 10% of population")
+        target_removals = max(1, int(len(population) * 0.1))
+    else:
+        logging.info("Fitness-based death: removing excess individuals")
+        target_removals = len(population) - max_population_size
+        if target_removals <= 0:
+            logging.info("Fitness-based death: no removals needed")
+            return []
+
     actual_removals = min(target_removals, max_removals, len(eligible_for_death))
 
     if actual_removals <= 0:
@@ -70,7 +78,6 @@ def apply_lowest_fitness_death(
         return []
 
     eligible_for_death.sort(key=lambda x: (x.fitness, -x.initial_generation))
-
     individuals_to_remove = eligible_for_death[:actual_removals]
 
     fitness_scores = [ind.fitness for ind in individuals_to_remove]
