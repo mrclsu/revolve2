@@ -157,7 +157,7 @@ class Incubator:
         for robot, scene_states in zip(robots, all_scene_states):
             sim_res = SimulationResult(scene_states)
             fitness_values.append(
-                sim_res.fitness([robot], FitnessFunctionAlgorithm.XY_DISPLACEMENT)
+                sim_res.fitness([robot], FitnessFunctionAlgorithm.MAX_DISTANCE)
             )
 
         return fitness_values

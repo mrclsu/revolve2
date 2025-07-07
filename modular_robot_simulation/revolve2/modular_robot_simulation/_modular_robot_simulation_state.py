@@ -1,4 +1,5 @@
 from revolve2.modular_robot.body import Module
+from revolve2.modular_robot.body.base import Core
 from revolve2.simulation.scene import MultiBodySystem, Pose, SimulationState
 
 
@@ -50,7 +51,25 @@ class ModularRobotSimulationState:
 
         :param module: The module to get the pose for.
         :returns: The absolute pose.
-        :raises NotImplementedError: Always.
         """
-        raise NotImplementedError()
-        return Pose()
+        # Check if this is a core module and if we have simulation state support for it
+        if isinstance(module, Core) and hasattr(
+            self._simulation_state, "get_core_module_absolute_pose"
+        ):
+            return self._simulation_state.get_core_module_absolute_pose(module)
+        else:
+            # For non-core modules or if core tracking isn't available, fall back to robot pose
+            return self.get_pose()
+
+    def get_core_absolute_pose(self, core: Core) -> Pose:
+        """
+        Get the pose of the core module, relative to the global reference frame.
+
+        :param core: The core module to get the pose for.
+        :returns: The absolute pose.
+        """
+        if hasattr(self._simulation_state, "get_core_module_absolute_pose"):
+            return self._simulation_state.get_core_module_absolute_pose(core)
+        else:
+            # Fall back to robot pose if core tracking isn't available
+            return self.get_pose()

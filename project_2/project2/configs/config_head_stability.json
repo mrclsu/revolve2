@@ -1,5 +1,5 @@
 {
-  "description": "Configuration 1: MAX_FITNESS + MAX_AGE",
+  "description": "Configuration for HEAD_STABILITY fitness function testing",
   "database_file": "database.sqlite",
   "num_simulators": 8,
   "evaluate": true,
@@ -15,10 +15,10 @@
   "field_x_max": 10,
   "field_y_min": -10,
   "field_y_max": 10,
-  "fitness_function_algorithm": "MAX_DISTANCE",
+  "fitness_function_algorithm": "HEAD_STABILITY",
   "mate_selection_strategy": "MAX_FITNESS",
   "mate_selection_threshold": 0.125,
   "mating_threshold": 1.2,
   "mating_cooldown": 3,
-  "death_mechanism": "MAX_AGE"
+  "death_mechanism": "LOWEST_FITNESS"
 }

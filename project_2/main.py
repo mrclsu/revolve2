@@ -215,7 +215,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        choices=["config1", "config2", "config3", "config4", "config5", "config6"],
+        choices=[
+            "config1",
+            "config2",
+            "config3",
+            "config4",
+            "config5",
+            "config6",
+            "config_head_stability",
+        ],
         default="config1",
         help="Config name to use (config1, config2, etc.)",
     )

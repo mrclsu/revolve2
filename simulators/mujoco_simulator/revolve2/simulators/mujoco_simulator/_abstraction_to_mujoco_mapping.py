@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from revolve2.simulation.scene import JointHinge, MultiBodySystem, UUIDKey
 from revolve2.simulation.scene.sensors import CameraSensor, IMUSensor
+from revolve2.modular_robot.body.base import Core
 
 
 @dataclass
@@ -18,6 +19,14 @@ class MultiBodySystemMujoco:
     """Information about a MuJoCo body."""
 
     id: int
+
+
+@dataclass
+class CoreModuleMujoco:
+    """Information about a MuJoCo core module."""
+
+    body_id: int
+    """The MuJoCo body ID of the core module."""
 
 
 @dataclass
@@ -45,6 +54,10 @@ class AbstractionToMujocoMapping:
     )
 
     multi_body_system: dict[UUIDKey[MultiBodySystem], MultiBodySystemMujoco] = field(
+        init=False, default_factory=dict
+    )
+
+    core_module: dict[UUIDKey[Core], CoreModuleMujoco] = field(
         init=False, default_factory=dict
     )
 

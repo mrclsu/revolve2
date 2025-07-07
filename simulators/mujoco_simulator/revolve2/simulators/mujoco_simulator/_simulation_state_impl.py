@@ -12,6 +12,7 @@ from revolve2.simulation.scene import (
     UUIDKey,
 )
 from revolve2.simulation.scene.sensors import CameraSensor, IMUSensor
+from revolve2.modular_robot.body.base import Core
 
 from ._abstraction_to_mujoco_mapping import AbstractionToMujocoMapping
 
@@ -70,6 +71,22 @@ class SimulationStateImpl(SimulationState):
         """
         raise NotImplementedError()
         return Pose()
+
+    def get_core_module_absolute_pose(self, core_module: Core) -> Pose:
+        """
+        Get the pose of a core module, relative to the global reference frame.
+
+        :param core_module: The core module to get the pose for.
+        :returns: The absolute pose.
+        """
+        core_mujoco = self._abstraction_to_mujoco_mapping.core_module[
+            UUIDKey(core_module)
+        ]
+        pose = Pose(
+            Vector3(self._xpos[core_mujoco.body_id]),
+            Quaternion(self._xquat[core_mujoco.body_id]),
+        )
+        return pose
 
     def get_multi_body_system_pose(self, multi_body_system: MultiBodySystem) -> Pose:
         """

@@ -1,5 +1,5 @@
 from revolve2.modular_robot.body.base import Core
-from revolve2.simulation.scene import AABB, MultiBodySystem, Pose, RigidBody
+from revolve2.simulation.scene import AABB, MultiBodySystem, Pose, RigidBody, UUIDKey
 from revolve2.simulation.scene.geometry import GeometryBox
 from revolve2.simulation.scene.geometry.textures import Texture
 
@@ -38,6 +38,11 @@ class CoreBuilder(Builder):
         :param body_to_multi_body_system_mapping: A mapping from body to multi-body system
         :return: The next children to be built.
         """
+        # Register the core module in the mapping for tracking
+        body_to_multi_body_system_mapping.core_to_rigid_body[UUIDKey(self._module)] = (
+            self._rigid_body
+        )
+
         self._rigid_body.geometries.append(
             GeometryBox(
                 pose=self._slot_pose,

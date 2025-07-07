@@ -14,9 +14,9 @@ try:
 
     new_len = len(logging.root.handlers)
 
-    assert (
-        old_len + 1 == new_len
-    ), "dm_control not adding logging handler as expected. Maybe they fixed their annoying behaviour? https://github.com/deepmind/dm_control/issues/314"
+    assert old_len + 1 == new_len, (
+        "dm_control not adding logging handler as expected. Maybe they fixed their annoying behaviour? https://github.com/deepmind/dm_control/issues/314"
+    )
 
     logging.root.removeHandler(logging.root.handlers[-1])
 except Exception as e:
@@ -154,6 +154,26 @@ def scene_to_model(
         mapping.multi_body_system[UUIDKey(multi_body_system)] = MultiBodySystemMujoco(
             id=model.body(f"mbs{mbs_i}/").id
         )
+
+    # Create core module maps if available
+    if hasattr(scene.handler, "core_to_rigid_body_mapping"):
+        from revolve2.simulators.mujoco_simulator._abstraction_to_mujoco_mapping import (
+            CoreModuleMujoco,
+        )
+
+        # Get the core mapping from the handler
+        core_mapping = scene.handler.core_to_rigid_body_mapping
+
+        # Each multi-body system corresponds to one modular robot with one core
+        # We can map each core to the root body of its corresponding multi-body system
+        mbs_index = 0
+        for core_key, rigid_body in core_mapping.items():
+            # Each core gets mapped to the root body of its multi-body system
+            if mbs_index < len(scene.multi_body_systems):
+                mapping.core_module[core_key] = CoreModuleMujoco(
+                    body_id=model.body(f"mbs{mbs_index}/").id
+                )
+                mbs_index += 1
 
     # Create sensor maps
     _creat_sensor_maps(all_rigid_bodies_and_names, mapping, model)
@@ -325,7 +345,7 @@ def _add_sensors(
 
         """Here we add camera Sensors."""
         for camera_i, camera in enumerate(rigid_body.sensors.camera_sensors):
-            camera_name = f"camera_{name}_{camera_i+1}"
+            camera_name = f"camera_{name}_{camera_i + 1}"
             env_mjcf.worldbody.add(
                 "camera",
                 name=camera_name,
@@ -333,7 +353,7 @@ def _add_sensors(
                 xyaxes="0 -1 0 0 0 1",
                 dclass=env_mjcf.full_identifier,
             )
-            site_name = f"{name}_site_camera_{camera_i+1}"
+            site_name = f"{name}_site_camera_{camera_i + 1}"
             env_mjcf.worldbody.add(
                 "site",
                 name=site_name,
@@ -355,9 +375,9 @@ def _add_joint_actuators(
     for joint, name in joints_and_names:
         # Add rotor inertia to joints. This value is arbitrarily chosen and appears stable enough.
         # Fine-tuning the armature value might be needed later.
-        multi_body_system_mjcf.find(namespace="joint", identifier=name).armature = (
-            joint.armature
-        )
+        multi_body_system_mjcf.find(
+            namespace="joint", identifier=name
+        ).armature = joint.armature
         multi_body_system_mjcf.actuator.add(
             "position",
             kp=joint.pid_gain_p,
@@ -389,9 +409,9 @@ def _set_colors_and_materials(
     """
     for geom, name in geoms_and_names:
         if fast_sim:
-            multi_body_system_mjcf.find("geom", name).rgba = (
-                geom.texture.primary_color.to_normalized_rgba_list()
-            )
+            multi_body_system_mjcf.find(
+                "geom", name
+            ).rgba = geom.texture.primary_color.to_normalized_rgba_list()
         else:
             m_name = f"geom_{name}"
             __make_material(multi_body_system_mjcf, name=m_name, element=geom)
@@ -442,7 +462,7 @@ def _creat_sensor_maps(
                 )
 
             for camera_i, camera in enumerate(rigid_body.sensors.camera_sensors):
-                camera_name = f"camera_{name}_{camera_i+1}"
+                camera_name = f"camera_{name}_{camera_i + 1}"
                 mapping.camera_sensor[UUIDKey(camera)] = CameraSensorMujoco(
                     camera_id=model.camera(camera_name).id,
                     camera_size=camera.camera_size,
