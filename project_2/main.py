@@ -125,18 +125,29 @@ def main(config: Config, folder_name: str = "stats") -> None:
         existing_robots_uuids: set[UUID] = set()
         existing_positions: list[Vector3] = []
         coordinates: list[tuple[float, float, float]] = []
+        final_coordinates: list[tuple[float, float, float]] = []
         for robot, pose, _ in scene._robots:
             existing_robots.append(robot)
             existing_robots_uuids.add(robot.uuid)
             existing_positions.append(pose.position)
-            xyz = (
-                simulation_result.get_final_scene_state()
-                .get_modular_robot_simulation_state(robot)
+            states = simulation_result.get_scene_states()
+            state_id=0
+            for state in states:
+                state_id += 1
+                xyz = (
+                state.get_modular_robot_simulation_state(robot)
                 .get_pose()
                 .position
-            )
-            coordinates.append((xyz.x, xyz.y, xyz.z))
-
+                )
+                coordinates.append((xyz.x, xyz.y, xyz.z, robot, state_id))
+            final_state = simulation_result.get_final_scene_state()
+            final_xyz = (
+                final_state.get_modular_robot_simulation_state(robot)
+                .get_pose()
+                .position
+                )
+            final_coordinates.append((xyz.x, xyz.y, xyz.z))
+            
         logging.info(f"coordinates length: {len(coordinates)}")
         logging.info(f"existing_robots length: {len(existing_robots)}")
         logging.info(f"existing_positions length: {len(existing_positions)}")
@@ -146,46 +157,47 @@ def main(config: Config, folder_name: str = "stats") -> None:
         )
 
         # TOOD: reafactor this so it's easier to read
-        for (i, (x1, y1, z1)), (j, (x2, y2, z2)) in combinations(
+        for (i, (x1, y1, z1, robot1, state_id1)), (j, (x2, y2, z2, robot2, state_id2)) in combinations(
             enumerate(coordinates), 2
         ):
-            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
-            if distance <= config.MATING_THRESHOLD:
-                r1_uuid = existing_robots[i].uuid
-                r2_uuid = existing_robots[j].uuid
-                pair = tuple(sorted((r1_uuid, r2_uuid)))
-                if (
-                    pair not in met_before
-                    or generation - met_before[pair] >= config.MATING_COOLDOWN
-                ):
-                    met_before[pair] = generation
-                    logging.info(
-                        f"Meeting: Robots {i} and {j} - Distance: {distance:.3f}"
-                    )
-
-                    if mate_selection.mate_decision(
-                        config.MATE_SELECTION_STRATEGY,
-                        uuid_to_individual[r1_uuid],
-                        uuid_to_individual[r2_uuid],
-                        population,
-                        config.MATE_SELECTION_THRESHOLD,
+            if robot1 != robot2 and state_id1 == state_id2:
+                distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+                if distance <= config.MATING_THRESHOLD:
+                    r1_uuid = existing_robots[i].uuid
+                    r2_uuid = existing_robots[j].uuid
+                    pair = tuple(sorted((r1_uuid, r2_uuid)))
+                    if (
+                        pair not in met_before
+                        or generation - met_before[pair] >= config.MATING_COOLDOWN
                     ):
-                        logging.info("YAY mating!")
+                        met_before[pair] = generation
+                        logging.info(
+                            f"Meeting: Robots {i} and {j} - Distance: {distance:.3f}"
+                        )
 
-                        # Increment offspring count for both parents
-                        stats.increment_offspring_count(r1_uuid)
-                        stats.increment_offspring_count(r2_uuid)
-
-                        offspring = reproduce_individual(
+                        if mate_selection.mate_decision(
+                            config.MATE_SELECTION_STRATEGY,
                             uuid_to_individual[r1_uuid],
                             uuid_to_individual[r2_uuid],
-                            rng,
-                            generation,
-                        )
-                        offspring_robot = offspring.develop(config.VISUALIZE_MAP)
-                        population.append(offspring)
-                        uuid_to_individual[offspring_robot.uuid] = offspring
-                        uuid_to_robot[offspring_robot.uuid] = offspring_robot
+                            population,
+                            config.MATE_SELECTION_THRESHOLD,
+                        ):
+                            logging.info("YAY mating!")
+
+                            # Increment offspring count for both parents
+                            stats.increment_offspring_count(r1_uuid)
+                            stats.increment_offspring_count(r2_uuid)
+
+                            offspring = reproduce_individual(
+                                uuid_to_individual[r1_uuid],
+                                uuid_to_individual[r2_uuid],
+                                rng,
+                                generation,
+                            )
+                            offspring_robot = offspring.develop(config.VISUALIZE_MAP)
+                            population.append(offspring)
+                            uuid_to_individual[offspring_robot.uuid] = offspring
+                            uuid_to_robot[offspring_robot.uuid] = offspring_robot
 
         # Apply death mechanism based on configuration
         dead_individuals = apply_death_mechanism(
@@ -201,7 +213,7 @@ def main(config: Config, folder_name: str = "stats") -> None:
             ind.set_final_generation(generation)
             population.remove(ind)
 
-        for i, coordinate in enumerate(coordinates):
+        for i, coordinate in enumerate(final_coordinates):
             robot = existing_robots[i]
             ind = uuid_to_individual[robot.uuid]
             if ind.final_generation == -1:
