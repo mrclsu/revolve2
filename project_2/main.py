@@ -90,7 +90,11 @@ def main(config: Config, folder_name: str = "stats") -> None:
         )  # Process one scene at a time
 
         # TODO process each simulation state to simulate continuos mating
-        simulation_result = SimulationResult(simulation_result_list)
+        simulation_result = SimulationResult(
+            simulation_result_list,
+            plane_size=plane_size,
+            movement_weight=config.MOVEMENT_WEIGHT,
+        )
         simulation_results.append(simulation_result)
 
         current_robots = [robot for robot, _, _ in scene._robots]

@@ -91,6 +91,9 @@ class Config:
         # Death mechanism settings (convert string enum to actual enum)
         self.DEATH_MECHANISM = DeathMechanism[self._config_data["death_mechanism"]]
 
+        # Fitness function settings
+        self.MOVEMENT_WEIGHT = self._config_data.get("movement_weight", 0.5)
+
         # Export config for debugging/logging
         self.CURRENT_CONFIG = self._config_data
 

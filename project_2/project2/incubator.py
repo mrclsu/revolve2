@@ -155,7 +155,7 @@ class Incubator:
 
         fitness_values = []
         for robot, scene_states in zip(robots, all_scene_states):
-            sim_res = SimulationResult(scene_states)
+            sim_res = SimulationResult(scene_states, plane_size=self.plane_size)
             fitness_values.append(
                 sim_res.fitness([robot], FitnessFunctionAlgorithm.MAX_DISTANCE)
             )

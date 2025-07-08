@@ -20,5 +20,6 @@
   "mate_selection_threshold": 0.125,
   "mating_threshold": 1.2,
   "mating_cooldown": 3,
-  "death_mechanism": "MAX_AGE"
+  "death_mechanism": "MAX_AGE",
+  "movement_weight": 0.5
 }

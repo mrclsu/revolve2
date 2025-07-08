@@ -12,6 +12,7 @@ class FitnessFunctionAlgorithm(Enum):
     XY_DISPLACEMENT = 1
     HEAD_STABILITY = 2
     MAX_DISTANCE = 3
+    COMBINED = 4
 
 
 class SimulationResult:
@@ -19,9 +20,11 @@ class SimulationResult:
         self,
         scene_states: list[SceneSimulationState],
         plane_size: float | None = None,
+        movement_weight: float = 0.5,
     ):
         self.scene_states = scene_states
         self.plane_size = plane_size
+        self.movement_weight = movement_weight
 
     def get_scene_states(self) -> list[SceneSimulationState]:
         return self.scene_states
@@ -49,6 +52,27 @@ class SimulationResult:
             max_distance(self.scene_states, robot, self.plane_size) for robot in robots
         ]
 
+    def _max_distance_clamped(self, robots: list[ModularRobot]) -> list[float]:
+        max_distance_scores = self._max_distance(robots)
+        max_max_distance = max(max_distance_scores)
+
+        return [
+            max_distance_score / max_max_distance
+            for max_distance_score in max_distance_scores
+        ]
+
+    def _combined(self, robots: list[ModularRobot]) -> list[float]:
+        head_stability_scores = self._head_stability(robots)
+        clamped_max_distance_scores = self._max_distance_clamped(robots)
+
+        return [
+            head_stability_score * (1 - self.movement_weight)
+            + clamped_max_distance_score * self.movement_weight
+            for head_stability_score, clamped_max_distance_score in zip(
+                head_stability_scores, clamped_max_distance_scores
+            )
+        ]
+
     def fitness(
         self,
         robots: list[ModularRobot],
@@ -60,5 +84,7 @@ class SimulationResult:
             return self._head_stability(robots)
         elif fitness_function == FitnessFunctionAlgorithm.MAX_DISTANCE:
             return self._max_distance(robots)
+        elif fitness_function == FitnessFunctionAlgorithm.COMBINED:
+            return self._combined(robots)
         else:
             raise ValueError(f"Invalid fitness function: {fitness_function}")
