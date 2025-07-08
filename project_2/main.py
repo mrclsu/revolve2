@@ -163,8 +163,11 @@ def main(config: Config, folder_name: str = "stats") -> None:
             if robot1 != robot2 and state_id1 == state_id2:
                 distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
                 if distance <= config.MATING_THRESHOLD:
-                    r1_uuid = existing_robots[i].uuid
-                    r2_uuid = existing_robots[j].uuid
+
+                    r1_uuid = robot1.uuid
+                    r2_uuid = robot2.uuid
+                    #r1_uuid = existing_robots[i].uuid
+                    #r2_uuid = existing_robots[j].uuid
                     pair = tuple(sorted((r1_uuid, r2_uuid)))
                     if (
                         pair not in met_before
