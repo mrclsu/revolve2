@@ -34,7 +34,10 @@ class Statistics:
         self.robot_stats[str_uuid]["offspring_count"] += 1
 
     def track_individuals(
-        self, uuid_to_individual: dict[UUID, Individual], generation: int
+        self,
+        uuid_to_individual: dict[UUID, Individual],
+        generation: int,
+        fitness_metrics: dict[str, dict[UUID, float]] | None = None,
     ):
         for uuid, individual in uuid_to_individual.items():
             str_uuid = str(uuid)
@@ -66,6 +69,19 @@ class Statistics:
             if "fitness" not in self.robot_stats[str_uuid]:
                 self.robot_stats[str_uuid]["fitness"] = {}
             self.robot_stats[str_uuid]["fitness"][generation] = individual.fitness
+
+            # Track additional fitness metrics if provided
+            if fitness_metrics:
+                if "fitness_metrics" not in self.robot_stats[str_uuid]:
+                    self.robot_stats[str_uuid]["fitness_metrics"] = {}
+                if generation not in self.robot_stats[str_uuid]["fitness_metrics"]:
+                    self.robot_stats[str_uuid]["fitness_metrics"][generation] = {}
+
+                for metric_name, metric_values in fitness_metrics.items():
+                    if uuid in metric_values:
+                        self.robot_stats[str_uuid]["fitness_metrics"][generation][
+                            metric_name
+                        ] = metric_values[uuid]
 
     def flush_to_json(self, postfix: str = ""):
         data = {

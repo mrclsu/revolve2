@@ -73,6 +73,15 @@ class SimulationResult:
             )
         ]
 
+    def get_all_fitness_metrics(
+        self, robots: list[ModularRobot]
+    ) -> dict[str, list[float]]:
+        """Calculate and return both MAX_DISTANCE and HEAD_STABILITY fitness metrics."""
+        return {
+            "MAX_DISTANCE": self._max_distance(robots),
+            "HEAD_STABILITY": self._head_stability(robots),
+        }
+
     def fitness(
         self,
         robots: list[ModularRobot],

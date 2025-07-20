@@ -102,11 +102,22 @@ def main(config: Config, folder_name: str = "stats") -> None:
             current_robots, config.FITNESS_FUNCTION_ALGORITHM
         )
 
+        # Get additional fitness metrics for stats tracking
+        all_fitness_metrics = simulation_result.get_all_fitness_metrics(current_robots)
+
+        # Map fitness metrics to robot UUIDs
+        fitness_metrics_by_uuid = {}
+        for metric_name, metric_values in all_fitness_metrics.items():
+            fitness_metrics_by_uuid[metric_name] = {}
+            for robot, metric_value in zip(current_robots, metric_values):
+                if robot.uuid in uuid_to_individual:
+                    fitness_metrics_by_uuid[metric_name][robot.uuid] = metric_value
+
         for robot, fitness in zip(current_robots, fitness_values):
             if robot.uuid in uuid_to_individual:
                 uuid_to_individual[robot.uuid].fitness = fitness
 
-        stats.track_individuals(uuid_to_individual, generation)
+        stats.track_individuals(uuid_to_individual, generation, fitness_metrics_by_uuid)
         stats.add_generation(generation, len(population))
         stats.flush_to_json(f"generation_{generation}")
 
@@ -212,6 +223,14 @@ def main(config: Config, folder_name: str = "stats") -> None:
 
 if __name__ == "__main__":
     import argparse
+    import os
+    import glob
+
+    # Dynamically get available config choices from configs/ folder
+    config_dir = os.path.join(os.path.dirname(__file__), "project2", "configs")
+    config_files = glob.glob(os.path.join(config_dir, "*.json"))
+    available_configs = [os.path.splitext(os.path.basename(f))[0] for f in config_files]
+    available_configs.sort()  # Sort for consistent ordering
 
     parser = argparse.ArgumentParser(
         description="Run simulation with different configs"
@@ -219,17 +238,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        choices=[
-            "config1",
-            "config2",
-            "config3",
-            "config4",
-            "config5",
-            "config6",
-            "config_head_stability",
-        ],
-        default="config1",
-        help="Config name to use (config1, config2, etc.)",
+        choices=available_configs,
+        default="config1"
+        if "config1" in available_configs
+        else (available_configs[0] if available_configs else "config1"),
+        help=f"Config name to use. Available configs: {', '.join(available_configs)}",
     )
     args = parser.parse_args()
 

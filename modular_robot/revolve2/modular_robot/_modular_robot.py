@@ -23,6 +23,7 @@ class ModularRobot:
         self._uuid = uuid.uuid1()
         self.body = body
         self.brain = brain
+        self.has_teleported = False
 
     @property
     def uuid(self) -> uuid.UUID:
