@@ -9,7 +9,6 @@ description = "Modular robot simulation and evolution with torus environment"
 authors = [{ name = "The author", email = "author@example.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -25,13 +24,14 @@ dependencies = [
     "numpy",
     "multineat",
     "pyrr",
+    "noise==1.2.3",
 ]
 
 [project.optional-dependencies]
 dev = ["black", "isort", "mypy", "flake8"]
 
 [tool.setuptools]
-packages = ["utils"]
+packages = ["project2"]
 
 [tool.black]
 line-length = 88

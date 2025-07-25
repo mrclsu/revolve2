@@ -1,5 +1,5 @@
 # Installs all Revolve2 packages in editable mode as well as development tools and their requirements.
-
+-e noise[dev]
 -e standards[dev]
 -e simulators/mujoco_simulator[dev]
 -e experimentation[dev]
