@@ -131,13 +131,11 @@ def main(config: Config, folder_name: str = "stats") -> None:
             existing_robots_uuids.add(robot.uuid)
             existing_positions.append(pose.position)
             states = simulation_result.get_scene_states()
-            state_id=0
+            state_id = 0
             for state in states:
                 state_id += 1
                 xyz = (
-                state.get_modular_robot_simulation_state(robot)
-                .get_pose()
-                .position
+                    state.get_modular_robot_simulation_state(robot).get_pose().position
                 )
                 coordinates.append((xyz.x, xyz.y, xyz.z, robot, state_id))
             final_state = simulation_result.get_final_scene_state()
@@ -145,9 +143,9 @@ def main(config: Config, folder_name: str = "stats") -> None:
                 final_state.get_modular_robot_simulation_state(robot)
                 .get_pose()
                 .position
-                )
+            )
             final_coordinates.append((xyz.x, xyz.y, xyz.z))
-            
+
         logging.info(f"coordinates length: {len(coordinates)}")
         logging.info(f"existing_robots length: {len(existing_robots)}")
         logging.info(f"existing_positions length: {len(existing_positions)}")
@@ -157,17 +155,17 @@ def main(config: Config, folder_name: str = "stats") -> None:
         )
 
         # TOOD: reafactor this so it's easier to read
-        for (i, (x1, y1, z1, robot1, state_id1)), (j, (x2, y2, z2, robot2, state_id2)) in combinations(
-            enumerate(coordinates), 2
-        ):
+        for (i, (x1, y1, z1, robot1, state_id1)), (
+            j,
+            (x2, y2, z2, robot2, state_id2),
+        ) in combinations(enumerate(coordinates), 2):
             if robot1 != robot2 and state_id1 == state_id2:
                 distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
                 if distance <= config.MATING_THRESHOLD:
-
                     r1_uuid = robot1.uuid
                     r2_uuid = robot2.uuid
-                    #r1_uuid = existing_robots[i].uuid
-                    #r2_uuid = existing_robots[j].uuid
+                    # r1_uuid = existing_robots[i].uuid
+                    # r2_uuid = existing_robots[j].uuid
                     pair = tuple(sorted((r1_uuid, r2_uuid)))
                     if (
                         pair not in met_before
@@ -195,6 +193,8 @@ def main(config: Config, folder_name: str = "stats") -> None:
                                 uuid_to_individual[r1_uuid],
                                 uuid_to_individual[r2_uuid],
                                 rng,
+                                innov_db_body,
+                                innov_db_brain,
                                 generation,
                             )
                             offspring_robot = offspring.develop(config.VISUALIZE_MAP)

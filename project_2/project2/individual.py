@@ -7,6 +7,7 @@ from revolve2.modular_robot._modular_robot import ModularRobot
 from project2.genotype import Genotype
 
 import numpy as np
+import multineat
 
 
 @dataclass
@@ -53,9 +54,13 @@ def reproduce(
     parent1: Individual,
     parent2: Individual,
     rng: np.random.Generator,
+    innov_db_body: multineat.InnovationDatabase,
+    innov_db_brain: multineat.InnovationDatabase,
     initial_generation: int = 0,
 ) -> Individual:
-    offspring = Genotype.crossover(parent1.genotype, parent2.genotype, rng)
+    offspring = Genotype.crossover(parent1.genotype, parent2.genotype, rng).mutate(
+        innov_db_body, innov_db_brain, rng
+    )
     return Individual(
         genotype=offspring, fitness=0.0, initial_generation=initial_generation
     )
