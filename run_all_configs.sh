@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Script to run all six configs safely, one after another
+# Script to run all experiment configs safely, one after another  
 # Based on mjpy script structure
 
 set -e  # Exit on error for the script itself, but we'll handle individual config errors
@@ -16,26 +16,31 @@ export DYLD_FRAMEWORK_PATH=/System/Library/Frameworks
 
 # Create logs directory with timestamp
 timestamp=$(date '+%Y%m%d_%H%M%S')
-logs_dir="logs/run_all_configs_$timestamp"
+logs_dir="logs/run_all_experiments_$timestamp"
 mkdir -p "$logs_dir"
 
 # Array to track results
 declare -a results=()
-declare -a config_names=("config1" "config2" "config3" "config4" "config5" "config6")
+declare -a config_names=(
+    "experiment_lowest_fitness_max_distance"
+    # "experiment_lowest_fitness_head_stability"
+    # "experiment_max_age_max_distance"
+    # "experiment_max_age_head_stability"
+)
 declare -a log_files=()
 
-echo "Starting execution of all configs..."
+echo "Starting execution of all experiment configs..."
 echo "Logs will be saved to: $logs_dir"
 echo "======================================="
 
 # Run each config with error handling
-for i in {1..6}; do
-    config_name="${config_names[$((i-1))]}"
+for i in "${!config_names[@]}"; do
+    config_name="${config_names[$i]}"
     log_file="$logs_dir/${config_name}_output.log"
     log_files+=("$log_file")
     
     echo ""
-    echo "Running $config_name (config $i)..."
+    echo "Running $config_name (experiment $((i+1))/4)..."
     echo "Output will be saved to: $log_file"
     echo "-----------------------------------"
     
@@ -43,21 +48,21 @@ for i in {1..6}; do
     start_time=$(date)
     
     # Run the config and capture both stdout and stderr to log file, while also showing on console
-    echo "=== Config $i ($config_name) started at $start_time ===" > "$log_file"
+    echo "=== Experiment $((i+1)) ($config_name) started at $start_time ===" > "$log_file"
     
     # Temporarily disable exit on error for individual config runs
     set +e
-    mjpython project_2/main.py --config $i 2>&1 | tee -a "$log_file"
+    mjpython project_2/main.py --config $config_name 2>&1 | tee -a "$log_file"
     exit_code=${PIPESTATUS[0]}  # Get the exit code of the first command in the pipeline
     set -e
     
     if [ $exit_code -eq 0 ]; then
         echo "✅ $config_name completed successfully at $(date)"
-        echo "=== Config $i ($config_name) completed successfully at $(date) ===" >> "$log_file"
+        echo "=== Experiment $((i+1)) ($config_name) completed successfully at $(date) ===" >> "$log_file"
         results+=("$config_name: SUCCESS")
     else
         echo "❌ $config_name failed at $(date) with exit code $exit_code"
-        echo "=== Config $i ($config_name) failed at $(date) with exit code $exit_code ===" >> "$log_file"
+        echo "=== Experiment $((i+1)) ($config_name) failed at $(date) with exit code $exit_code ===" >> "$log_file"
         results+=("$config_name: FAILED (exit code $exit_code)")
     fi
     
@@ -68,7 +73,7 @@ done
 
 echo ""
 echo "======================================="
-echo "Summary of all config runs:"
+echo "Summary of all experiment runs:"
 echo "======================================="
 
 # Print results summary with log file paths
@@ -77,10 +82,10 @@ for i in "${!results[@]}"; do
 done
 
 echo ""
-echo "All configs execution completed at $(date)"
+echo "All experiments execution completed at $(date)"
 echo "All logs saved in directory: $logs_dir"
 
-# Exit with error code if any config failed
+# Exit with error code if any experiment failed
 failed_count=0
 for result in "${results[@]}"; do
     if [[ $result == *"FAILED"* ]]; then
@@ -89,9 +94,9 @@ for result in "${results[@]}"; do
 done
 
 if [ $failed_count -gt 0 ]; then
-    echo "⚠️  $failed_count config(s) failed"
+    echo "⚠️  $failed_count experiment(s) failed"
     exit 1
 else
-    echo "🎉 All configs completed successfully!"
+    echo "🎉 All experiments completed successfully!"
     exit 0
 fi 
