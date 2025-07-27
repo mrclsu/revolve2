@@ -1,6 +1,8 @@
 """Individual class."""
 
-from dataclasses import dataclass
+import logging
+from dataclasses import dataclass, field
+from uuid import UUID
 
 from revolve2.modular_robot._modular_robot import ModularRobot
 
@@ -16,17 +18,25 @@ class Individual:
 
     genotype: Genotype
     fitness: float
+    fitness_metrics: dict[str, float]
 
     initial_generation: int = 0
     final_generation: int = -1
     robot: ModularRobot | None = None
 
-    def __init__(self, genotype: Genotype, fitness: float, initial_generation: int = 0):
+    def __init__(
+        self,
+        genotype: Genotype,
+        fitness: float,
+        initial_generation: int = 0,
+        fitness_metrics: dict[str, float] = field(default_factory=dict),
+    ):
         self.genotype = genotype
         self.fitness = fitness
         self.initial_generation = initial_generation
+        self.fitness_metrics = fitness_metrics
 
-    def get_robot_uuid(self) -> str | None:
+    def get_robot_uuid(self) -> UUID | None:
         return self.robot.uuid if self.robot is not None else None
 
     def get_initial_generation(self) -> int:
