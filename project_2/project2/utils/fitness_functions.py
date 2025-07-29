@@ -157,7 +157,7 @@ def max_distance(
 
     # Clamp the distance to the plane size, so that the fitness function is always between 0 and 1
     if plane_size is not None:
-        return min(1.0, total_distance / (2 * plane_size))
+        return min(1.0, total_distance / plane_size)
     else:
         logging.warning("Plane size is not set, using regular distance calculation")
         return total_distance

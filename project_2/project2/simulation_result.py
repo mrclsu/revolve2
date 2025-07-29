@@ -53,24 +53,15 @@ class SimulationResult:
             max_distance(self.scene_states, robot, self.plane_size) for robot in robots
         ]
 
-    def _max_distance_clamped(self, robots: list[ModularRobot]) -> list[float]:
-        max_distance_scores = self._max_distance(robots)
-        max_max_distance = max(max_distance_scores)
-
-        return [
-            max_distance_score / max_max_distance
-            for max_distance_score in max_distance_scores
-        ]
-
     def _combined(self, robots: list[ModularRobot]) -> list[float]:
         head_stability_scores = self._head_stability(robots)
-        clamped_max_distance_scores = self._max_distance_clamped(robots)
+        max_distance_scores = self._max_distance(robots)
 
         return [
             head_stability_score * (1 - self.movement_weight)
-            + clamped_max_distance_score * self.movement_weight
-            for head_stability_score, clamped_max_distance_score in zip(
-                head_stability_scores, clamped_max_distance_scores
+            + max_distance_score * self.movement_weight
+            for head_stability_score, max_distance_score in zip(
+                head_stability_scores, max_distance_scores
             )
         ]
 
