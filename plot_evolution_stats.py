@@ -618,7 +618,7 @@ def process_single_file(json_file_path, output_dir=None, config_name=""):
         print("Plots saved in current directory")
 
 
-def process_folder(folder_path):
+def process_folder(folder_path, output_dir=None):
     """Process all JSON files in a folder."""
     folder_path = Path(folder_path)
     if not folder_path.exists():
@@ -635,8 +635,12 @@ def process_folder(folder_path):
     print(f"Found {len(json_files)} JSON files in '{folder_path}'")
 
     # Create main output directory
-    output_base_dir = folder_path / "plots"
-    output_base_dir.mkdir(exist_ok=True)
+    if output_dir:
+        output_base_dir = Path(output_dir)
+        output_base_dir.mkdir(exist_ok=True)
+    else:
+        output_base_dir = folder_path / "plots"
+        output_base_dir.mkdir(exist_ok=True)
 
     # Process each JSON file
     for json_file in sorted(json_files):
@@ -665,10 +669,17 @@ Examples:
     parser.add_argument(
         "path", help="Path to a JSON file or folder containing JSON files"
     )
+    parser.add_argument(
+        "--out",
+        type=str,
+        default=None,
+        help="Directory to save plots (default: current directory or <folder>/plots)",
+    )
 
     args = parser.parse_args()
 
     path = Path(args.path)
+    output_dir = args.out
 
     if not path.exists():
         print(f"Error: Path '{path}' does not exist.")
@@ -681,11 +692,11 @@ Examples:
             sys.exit(1)
 
         config_name = path.stem
-        process_single_file(path, config_name=config_name)
+        process_single_file(path, output_dir=output_dir, config_name=config_name)
 
     elif path.is_dir():
         # Process folder
-        process_folder(path)
+        process_folder(path, output_dir=output_dir)
 
     else:
         print(f"Error: '{path}' is neither a file nor a directory.")
