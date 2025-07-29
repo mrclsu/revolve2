@@ -5,6 +5,7 @@ from revolve2.modular_robot_simulation._modular_robot_simulation_state import (
 from revolve2.modular_robot_simulation._scene_simulation_state import (
     SceneSimulationState,
 )
+from revolve2.simulation.scene._pose import Pose
 from revolve2.standards.fitness_functions import (
     xy_displacement as xy_displacement_standard,
 )
@@ -24,8 +25,28 @@ def torus_aware_xy_displacement(
     end_state: ModularRobotSimulationState,
     robot: ModularRobot,
 ) -> float:
-    if robot.has_teleported:
-        return 0.0
+    if len(robot.teleport_coordinates) > 0:
+        start_pos = begin_state.get_pose().position
+        end_pos = end_state.get_pose().position
+
+        teleported = (
+            abs(start_pos.x - end_pos.x) > 1 or abs(start_pos.y - end_pos.y) > 1
+        ) and any(
+            [
+                (
+                    abs(start_pos.x - teleport_coord[0].x) < 1
+                    and abs(start_pos.y - teleport_coord[0].y) < 1
+                    and abs(end_pos.x - teleport_coord[1].x) < 1
+                    and abs(end_pos.y - teleport_coord[1].y) < 1
+                )
+                for teleport_coord in robot.teleport_coordinates
+            ]
+        )
+        if teleported:
+            logging.info(
+                f"Teleported in current state: {start_pos}, {end_pos}, {abs(start_pos.x - end_pos.x) > 1}, {abs(start_pos.y - end_pos.y) > 1}"
+            )
+            return 0.0
 
     # If no teleportation occurred, use regular distance calculation
     return xy_displacement(begin_state, end_state)
@@ -56,7 +77,7 @@ def head_stability(
         return 1.0  # No change possible with less than 2 states
 
     # Get all core module poses throughout the simulation
-    poses = []
+    poses: list[Pose] = []
 
     for state in scene_states:
         robot_state = state.get_modular_robot_simulation_state(robot)
@@ -130,6 +151,7 @@ def max_distance(
                 current_robot_state, next_robot_state, robot
             )
         else:
+            logging.warning("Plane size is not set, using regular distance calculation")
             # Use regular distance calculation
             total_distance += xy_displacement(current_robot_state, next_robot_state)
 

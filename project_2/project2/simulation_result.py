@@ -1,4 +1,5 @@
 from enum import Enum
+import logging
 from revolve2.modular_robot._modular_robot import ModularRobot
 from revolve2.modular_robot_simulation import SceneSimulationState
 from project2.utils.fitness_functions import (

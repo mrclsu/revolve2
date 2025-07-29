@@ -156,13 +156,6 @@ def simulate_scene(
         if time >= last_control_time + control_step:
             last_control_time = math.floor(time / control_step) * control_step
 
-            # Reset teleportation flags for all modular robots at the start of each control step
-            if hasattr(scene.handler, "modular_robot_to_multi_body_system_mapping"):
-                for (
-                    robot_uuid_key
-                ) in scene.handler.modular_robot_to_multi_body_system_mapping.keys():
-                    robot_uuid_key.value.has_teleported = False
-
             simulation_state = SimulationStateImpl(
                 data=data, abstraction_to_mujoco_mapping=mapping, camera_views=images
             )
@@ -287,10 +280,13 @@ def _handle_teleportation(
                     ) in modular_robot_to_multi_body_system_mapping.items():
                         if multi_body_system.uuid == mbs_uuid.value.uuid:
                             # Mark the robot as teleported
-                            robot_uuid_key.value.has_teleported = True
-                            logging.info(
-                                f"Marked modular robot {robot_uuid_key.value.uuid} as teleported"
+                            robot_uuid_key.value.teleport_coordinates.append(
+                                (position, new_position)
                             )
+                            logging.info(
+                                f"Marked modular robot {robot_uuid_key.value.uuid} as teleported",
+                            )
+                            logging.info(robot_uuid_key.value.teleport_coordinates)
                             break
 
                 # Find the freejoint for this body in the model

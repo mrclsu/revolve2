@@ -1,5 +1,7 @@
 import uuid
 
+from pyrr import Vector3
+
 from .body.base import Body
 from .brain import Brain
 
@@ -11,7 +13,7 @@ class ModularRobot:
 
     body: Body
     brain: Brain
-    has_teleported: bool
+    teleport_coordinates: list[tuple[Vector3, Vector3]]
 
     def __init__(self, body: Body, brain: Brain):
         """
@@ -23,7 +25,7 @@ class ModularRobot:
         self._uuid = uuid.uuid1()
         self.body = body
         self.brain = brain
-        self.has_teleported = False
+        self.teleport_coordinates = []
 
     @property
     def uuid(self) -> uuid.UUID:

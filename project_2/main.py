@@ -26,7 +26,7 @@ import math
 from project2.individual import Individual, reproduce as reproduce_individual
 from project2.incubator import Incubator
 from project2.utils.helpers import initialize_local_simulator, get_random_free_position
-from project2.simulation_result import SimulationResult, FitnessFunctionAlgorithm
+from project2.simulation_result import SimulationResult
 from project2.stats import Statistics
 import project2.mate_selection as mate_selection
 from project2.death_mechanism import apply_death_mechanism
@@ -87,9 +87,8 @@ def main(config: Config, folder_name: str = "stats") -> None:
             simulator=simulator,
             batch_parameters=make_standard_batch_parameters(),
             scenes=scene,
-        )  # Process one scene at a time
+        )
 
-        # TODO process each simulation state to simulate continuos mating
         simulation_result = SimulationResult(
             simulation_result_list,
             plane_size=plane_size,
@@ -144,7 +143,7 @@ def main(config: Config, folder_name: str = "stats") -> None:
                 .get_pose()
                 .position
             )
-            final_coordinates.append((xyz.x, xyz.y, xyz.z))
+            final_coordinates.append((final_xyz.x, final_xyz.y, final_xyz.z))
 
         logging.info(f"coordinates length: {len(coordinates)}")
         logging.info(f"existing_robots length: {len(existing_robots)}")
@@ -159,13 +158,11 @@ def main(config: Config, folder_name: str = "stats") -> None:
             j,
             (x2, y2, z2, robot2, state_id2),
         ) in combinations(enumerate(coordinates), 2):
-            if robot1 != robot2 and state_id1 == state_id2:
+            r1_uuid = robot1.uuid
+            r2_uuid = robot2.uuid
+            if r1_uuid != r2_uuid and state_id1 == state_id2:
                 distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
                 if distance <= config.MATING_THRESHOLD:
-                    r1_uuid = robot1.uuid
-                    r2_uuid = robot2.uuid
-                    # r1_uuid = existing_robots[i].uuid
-                    # r2_uuid = existing_robots[j].uuid
                     pair = tuple(sorted((r1_uuid, r2_uuid)))
                     if (
                         pair not in met_before
@@ -219,6 +216,8 @@ def main(config: Config, folder_name: str = "stats") -> None:
         for i, coordinate in enumerate(final_coordinates):
             robot = existing_robots[i]
             ind = uuid_to_individual[robot.uuid]
+            # Reset teleport coordinates for the next generation
+            robot.teleport_coordinates = []
             if ind.final_generation == -1:
                 scene.add_robot(robot, pose=Pose(Vector3(coordinate)))
 

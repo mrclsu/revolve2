@@ -28,7 +28,10 @@ class TorusSimulationTeleportationHandler(TeleportHandler):
         :return: A new position if teleportation is needed, None otherwise
         """
 
-        new_position = Vector3(position)
+        new_position = Vector3()
+        new_position.x = position.x
+        new_position.y = position.y
+        new_position.z = position.z
 
         teleported = False
 
@@ -37,13 +40,13 @@ class TorusSimulationTeleportationHandler(TeleportHandler):
             logging.info(
                 f"TorusHandler: X > {self.half_size}, teleporting to opposite side"
             )
-            new_position.x = -self.half_size
+            new_position.x = -self.half_size + 0.01
             teleported = True
         elif position.x < -self.half_size:
             logging.info(
                 f"TorusHandler: X < -{self.half_size}, teleporting to opposite side"
             )
-            new_position.x = self.half_size
+            new_position.x = self.half_size - 0.01
             teleported = True
 
         # Check Y boundaries
@@ -51,13 +54,13 @@ class TorusSimulationTeleportationHandler(TeleportHandler):
             logging.info(
                 f"TorusHandler: Y > {self.half_size}, teleporting to opposite side"
             )
-            new_position.y = -self.half_size
+            new_position.y = -self.half_size + 0.01
             teleported = True
         elif position.y < -self.half_size:
             logging.info(
                 f"TorusHandler: Y < -{self.half_size}, teleporting to opposite side"
             )
-            new_position.y = self.half_size
+            new_position.y = self.half_size - 0.01
             teleported = True
 
         # If we need to teleport, return the new position
