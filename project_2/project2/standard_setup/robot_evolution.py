@@ -66,7 +66,7 @@ class ModularRobotEvolution(Evolution):
         """
         parents, parent_kwargs = self._parent_selection.select(population, **kwargs)
         merged_kwargs = {**parent_kwargs, **kwargs}
-        children = self._reproducer.reproduce(parents, **merged_kwargs)
+        children, parent_uuids = self._reproducer.reproduce(parents, **merged_kwargs)
         child_task_performance, child_all_fitness_metrics = self._evaluator.evaluate(
             children
         )
@@ -76,5 +76,6 @@ class ModularRobotEvolution(Evolution):
             children=children,
             child_task_performance=child_task_performance,
             child_all_fitness_metrics=child_all_fitness_metrics,
+            parent_uuids=parent_uuids,
         )
         return survivors

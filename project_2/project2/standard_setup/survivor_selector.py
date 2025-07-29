@@ -39,15 +39,17 @@ class SurvivorSelector(Selector):
         offspring_all_fitness_metrics = kwargs.get("child_all_fitness_metrics")
         generation_index = kwargs.get("generation_index")
         stats: Statistics = kwargs.get("stats")
+        parent_uuids = kwargs.get("parent_uuids")
         if (
             offspring is None
             or offspring_fitness is None
             or generation_index is None
             or stats is None
             or offspring_all_fitness_metrics is None
+            or parent_uuids is None
         ):
             raise ValueError(
-                "No offspring was passed with positional argument 'children' and / or 'child_task_performance' and / or 'initial_generation' and / or 'stats' and / or 'child_all_fitness_metrics'."
+                "No offspring was passed with positional argument 'children' and / or 'child_task_performance' and / or 'initial_generation' and / or 'stats' and / or 'child_all_fitness_metrics' and / or 'parent_uuids'."
             )
 
         original_survivors, offspring_survivors = population_management.steady_state(
@@ -80,6 +82,10 @@ class SurvivorSelector(Selector):
             )
             for i in offspring_survivors
         ]
+
+        for i in offspring_survivors:
+            stats.increment_offspring_count(parent_uuids[i][0])
+            stats.increment_offspring_count(parent_uuids[i][1])
 
         for individual in new_pop:
             individual.develop()

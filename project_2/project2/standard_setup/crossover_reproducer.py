@@ -5,8 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from project2.genotype import Genotype
 from project2.individual import Individual
-
-
+from uuid import UUID
 from revolve2.experimentation.evolution.abstract_elements import Reproducer
 
 
@@ -36,7 +35,7 @@ class CrossoverReproducer(Reproducer):
 
     def reproduce(
         self, population: npt.NDArray[np.int_], **kwargs: Any
-    ) -> list[Genotype]:
+    ) -> tuple[list[Genotype], list[tuple[UUID, UUID]]]:
         """
         Reproduce the population by crossover.
 
@@ -57,4 +56,11 @@ class CrossoverReproducer(Reproducer):
             ).mutate(self.innov_db_body, self.innov_db_brain, self.rng)
             for parent1_i, parent2_i in population
         ]
-        return offspring_genotypes
+        parent_uuids = [
+            (
+                parent_population[parent1_i].get_robot_uuid(),
+                parent_population[parent2_i].get_robot_uuid(),
+            )
+            for parent1_i, parent2_i in population
+        ]
+        return offspring_genotypes, parent_uuids
