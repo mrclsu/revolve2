@@ -5,7 +5,7 @@
   "evaluate": true,
   "simulation_headless": true,
   "visualize_map": false,
-  "incubator_training_budget": 0,
+  "incubator_training_budget": 100,
   "population_size": 35,
   "min_population_size": 25,
   "max_population_size": 45,
