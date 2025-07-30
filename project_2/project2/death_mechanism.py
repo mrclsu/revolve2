@@ -63,7 +63,9 @@ def apply_lowest_fitness_death(
 
     if current_generation > 0 and current_generation % generation_interval == 0:
         logging.info("Fitness-based death: removing bottom 10% of population")
-        target_removals = max(1, int(len(population) * 0.1))
+        target_removals = max(
+            1, int(len(population) * 0.1), (len(population) - max_population_size)
+        )
     else:
         logging.info("Fitness-based death: removing excess individuals")
         target_removals = len(population) - max_population_size
