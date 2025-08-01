@@ -33,6 +33,16 @@ class Statistics:
 
         self.robot_stats[str_uuid]["offspring_count"] += 1
 
+    def increment_meeting_count(self, robot_uuid: UUID):
+        str_uuid = str(robot_uuid)
+        if str_uuid not in self.robot_stats:
+            self.robot_stats[str_uuid] = {}
+
+        if "meeting_count" not in self.robot_stats[str_uuid]:
+            self.robot_stats[str_uuid]["meeting_count"] = 0
+
+        self.robot_stats[str_uuid]["meeting_count"] += 1
+
     def track_individuals(
         self,
         uuid_to_individual: dict[UUID, Individual],

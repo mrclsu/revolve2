@@ -172,6 +172,8 @@ def main(config: Config, folder_name: str = "stats") -> None:
                         logging.info(
                             f"Meeting: Robots {i} and {j} - Distance: {distance:.3f}"
                         )
+                        stats.increment_meeting_count(r1_uuid)
+                        stats.increment_meeting_count(r2_uuid)
 
                         if mate_selection.mate_decision(
                             config.MATE_SELECTION_STRATEGY,
