@@ -11,6 +11,7 @@ from project2.individual import Individual
 from revolve2.experimentation.logging import setup_logging
 from revolve2.experimentation.rng import make_rng_time_seed
 from project2.stats import Statistics
+from project_2.project2.incubator import Incubator
 
 
 from .robot_evolution import ModularRobotEvolution
@@ -71,16 +72,17 @@ def run_standard_setup(
 
     # Create an initial population as we cant start from nothing.
     logging.info("Generating initial population.")
-    initial_genotypes = [
-        Genotype.random(
-            innov_db_body=innov_db_body,
-            innov_db_brain=innov_db_brain,
-            rng=rng,
-        )
-        for _ in range(config.POPULATION_SIZE)
-    ]
+    incubated_population = Incubator(
+        population_size=config.POPULATION_SIZE,
+        training_budget=config.INCUBATOR_TRAINING_BUDGET,
+        innov_db_body=innov_db_body,
+        innov_db_brain=innov_db_brain,
+        rng=rng,
+        num_simulators=config.NUM_SIMULATORS,
+    ).incubate()
 
-    # Evaluate the initial population.
+    initial_genotypes = [individual.genotype for individual in incubated_population]
+
     logging.info("Evaluating initial population.")
     initial_fitnesses, initial_all_fitness_metrics = evaluator.evaluate(
         initial_genotypes
