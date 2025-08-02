@@ -59,12 +59,13 @@ def head_stability(
     """
     Calculate core module (head) stability on a 0-1 scale.
 
-    This function measures how consistent the robot's core module orientation is
-    throughout the simulation. The core module serves as the "head" of the modular robot
-    and is the central component that all other modules (joints, bricks) are attached to.
+    This function measures how consistent the robot's core module orientation and
+    z-position are throughout the simulation. The core module serves as the "head"
+    of the modular robot and is the central component that all other modules
+    (joints, bricks) are attached to.
 
-    A value of 1.0 means perfectly stable core orientation (no orientation change),
-    while 0.0 means highly unstable core orientation (large orientation changes).
+    A value of 1.0 means perfectly stable core (no orientation or z-position change),
+    while 0.0 means highly unstable core (large orientation or z-position changes).
 
     This function now attempts to track the actual core module pose when available,
     falling back to overall robot pose if core module tracking is not implemented.
@@ -97,10 +98,13 @@ def head_stability(
             poses.append(robot_state.get_pose())
 
     angular_deviations = []
+    z_position_deviations = []
 
     for i in range(len(poses) - 1):
         current_orientation = poses[i].orientation
         next_orientation = poses[i + 1].orientation
+        current_z = poses[i].position.z
+        next_z = poses[i + 1].position.z
 
         # Calculate the angular distance between two quaternions
         # Using the formula: angle = 2 * arccos(|dot_product|)
@@ -112,19 +116,33 @@ def head_stability(
         angular_deviation = 2 * math.acos(dot_product)
         angular_deviations.append(angular_deviation)
 
-    if not angular_deviations:
+        # Calculate z-position deviation
+        z_deviation = abs(current_z - next_z)
+        z_position_deviations.append(z_deviation)
+
+    if not angular_deviations or not z_position_deviations:
         return 1.0  # Perfect stability if no deviations
 
-    # Calculate the average angular deviation
+    # Calculate the average deviations
     avg_angular_deviation = sum(angular_deviations) / len(angular_deviations)
+    avg_z_deviation = sum(z_position_deviations) / len(z_position_deviations)
 
-    # Convert to stability score (0-1 scale)
-    # Use an exponential decay function to map angular deviation to stability
+    # Convert to stability scores (0-1 scale)
+    # Use exponential decay functions to map deviations to stability
     # Higher deviations result in lower stability scores
-    # The constant 2.0 controls the sensitivity (can be adjusted)
-    stability_score = math.exp(-avg_angular_deviation * 2.0)
 
-    return max(0.0, min(1.0, stability_score))
+    # Angular stability (constant 2.0 controls sensitivity)
+    angular_stability = math.exp(-avg_angular_deviation * 2.0)
+
+    # Z-position stability (constant 5.0 controls sensitivity - higher than angular
+    # because z-position changes are typically smaller in magnitude)
+    z_stability = math.exp(-avg_z_deviation * 3.0)
+
+    # Combine both stability scores by multiplication
+    # Both orientation AND z-position need to be stable for high overall stability
+    combined_stability = angular_stability * z_stability
+
+    return max(0.0, min(1.0, combined_stability))
 
 
 def max_distance(
