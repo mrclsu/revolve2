@@ -6,7 +6,6 @@ from project2.genotype import Genotype
 import multineat
 import numpy as np
 from revolve2.modular_robot_simulation import ModularRobotScene, simulate_scenes
-from revolve2.simulators.mujoco_simulator import LocalSimulator
 from revolve2.standards import terrains
 from revolve2.standards.simulation_parameters import make_standard_batch_parameters
 
@@ -38,12 +37,10 @@ class Incubator:
 
         self.plane_size = plane_size
 
-        # RevDE algorithm parameters
+        # RevDE algorithm parameters (matching original implementation)
         self.F = 0.5  # Scaling factor for differential mutation
         self.CR = 0.9  # Crossover probability
-        self.transformation_prob = (
-            0.3  # Probability of applying reversible transformation
-        )
+        # Note: Original RevDE always applies reversible transformation (no probability)
 
         self.initialize_population()
 
@@ -60,14 +57,19 @@ class Incubator:
 
     def _differential_mutation_brain_only(
         self, target_idx: int, population: list[Genotype]
-    ) -> Genotype:
+    ) -> tuple[Genotype, list[Genotype]]:
         """
         Perform differential mutation using RevDE strategy, but only on the brain.
         The body remains unchanged from the target individual.
 
+        Implements the reversible linear transformation from the original RevDE paper:
+        y_1 = x_1 + F * (x_2 - x_3)
+        y_2 = x_2 + F * (x_3 - y_1)
+        y_3 = x_3 + F * (y_1 - y_2)
+
         :param target_idx: Index of target individual
         :param population: Current population
-        :return: Genotype with mutated brain but original body
+        :return: Tuple of (primary donor genotype, list of all donors)
         """
         # Select three random individuals different from target
         candidates = [i for i in range(len(population)) if i != target_idx]
@@ -77,40 +79,55 @@ class Incubator:
                 innov_db_brain=self.innov_db_brain,
                 rng=self.rng,
             )
-            return mutated
+            return mutated, [mutated]
 
+        # Select three individuals: a, b, c
         a, b, c = self.rng.choice(candidates, 3, replace=False)
 
-        # Keep the original body from target, only modify brain
-        target_body = population[target_idx].body
+        # Get the corresponding genotypes
+        x1 = population[target_idx]  # target
+        x2 = population[a]  # first random
+        x3 = population[b]  # second random
 
-        # Create donor brain by combining brains from a, b, c
-        # Start with brain from 'a'
-        donor_brain = population[a].brain
+        # Keep target body unchanged
+        target_body = x1.body
 
-        # Apply differential scaling by using brain crossover with modified probability
+        # Apply RevDE reversible transformation (always, as per original paper)
+        # Apply RevDE reversible transformation - BRAIN ONLY
+        # For brain genotypes, we approximate the differential operation using
+        # weighted crossover to simulate the linear combination
+
+        # Step 1: y_1 = x_1 + F * (x_2 - x_3) - brain only
+        x2_x3_cross_brain = Genotype.crossover_brains_only(x2, x3, self.rng)
         if self.rng.random() < self.F:
-            # Crossover between brains b and c, then with a
-            bc_cross = Genotype.crossover_brains_only(
-                population[b], population[c], self.rng
-            )
-            donor_cross = Genotype.crossover_brains_only(
-                Genotype(body=target_body, brain=donor_brain),
-                Genotype(body=target_body, brain=bc_cross.brain),
-                self.rng,
-            )
-            donor_brain = donor_cross.brain
+            y1_brain = Genotype.crossover_brains_only(
+                x1, x2_x3_cross_brain, self.rng
+            ).brain
+        else:
+            y1_brain = x1.brain
+        y1 = Genotype(body=target_body, brain=y1_brain)
 
-        # Apply additional brain mutation with some probability
-        if self.rng.random() < self.transformation_prob:
-            temp_genotype = Genotype(body=target_body, brain=donor_brain)
-            mutated_genotype = temp_genotype.mutate_brain_only(
-                innov_db_brain=self.innov_db_brain,
-                rng=self.rng,
-            )
-            donor_brain = mutated_genotype.brain
+        # Step 2: y_2 = x_2 + F * (x_3 - y_1) - brain only
+        x3_y1_cross_brain = Genotype.crossover_brains_only(x3, y1, self.rng)
+        if self.rng.random() < self.F:
+            y2_brain = Genotype.crossover_brains_only(
+                x2, x3_y1_cross_brain, self.rng
+            ).brain
+        else:
+            y2_brain = x2.brain
+        y2 = Genotype(body=target_body, brain=y2_brain)
 
-        return Genotype(body=target_body, brain=donor_brain)
+        # Step 3: y_3 = x_3 + F * (y_1 - y_2) - brain only
+        y1_y2_cross_brain = Genotype.crossover_brains_only(y1, y2, self.rng)
+        if self.rng.random() < self.F:
+            y3_brain = Genotype.crossover_brains_only(
+                x3, y1_y2_cross_brain, self.rng
+            ).brain
+        else:
+            y3_brain = x3.brain
+        y3 = Genotype(body=target_body, brain=y3_brain)
+
+        return y1, [y1, y2, y3]
 
     def _crossover_step(self, target: Genotype, donor: Genotype) -> Genotype:
         """
@@ -122,7 +139,11 @@ class Incubator:
         :return: Trial genotype with target's body
         """
         if self.rng.random() < self.CR:
-            return Genotype.crossover_brains_only(target, donor, self.rng)
+            # Brain-only crossover - explicitly preserve target body
+            crossed_brain = Genotype.crossover_brains_only(
+                target, donor, self.rng
+            ).brain
+            return Genotype(body=target.body, brain=crossed_brain)
         else:
             return target
 
@@ -195,7 +216,7 @@ class Incubator:
                 genotypes = [ind.genotype for ind in individuals]
 
                 # Differential mutation (brain only)
-                donor = self._differential_mutation_brain_only(i, genotypes)
+                donor, all_donors = self._differential_mutation_brain_only(i, genotypes)
 
                 # Crossover
                 trial = self._crossover_step(individuals[i].genotype, donor)

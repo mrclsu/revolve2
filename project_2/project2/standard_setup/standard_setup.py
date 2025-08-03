@@ -11,7 +11,7 @@ from project2.individual import Individual
 from revolve2.experimentation.logging import setup_logging
 from revolve2.experimentation.rng import make_rng_time_seed
 from project2.stats import Statistics
-from project_2.project2.incubator import Incubator
+from project2.incubator import Incubator
 
 
 from .robot_evolution import ModularRobotEvolution
