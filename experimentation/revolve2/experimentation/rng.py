@@ -51,3 +51,14 @@ def make_rng_time_seed(log_seed: bool = True) -> np.random.Generator:
     :returns: The random number generator.
     """
     return np.random.Generator(np.random.PCG64(seed_from_time(log_seed)))
+
+
+def make_rng_time_seed2(log_seed: bool = True) -> tuple[np.random.Generator, int]:
+    """
+    Create a numpy random number generator from a seed.
+
+    :param log_seed: If the automatically created seed should be logged. It probably should.
+    :returns: The random number generator.
+    """
+    seed = seed_from_time(log_seed)
+    return np.random.Generator(np.random.PCG64(seed)), seed

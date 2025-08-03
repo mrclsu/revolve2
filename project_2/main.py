@@ -11,7 +11,7 @@ from revolve2.simulation.scene.vector2.vector2 import Vector2
 import multineat
 
 from revolve2.experimentation.logging import setup_logging
-from revolve2.experimentation.rng import make_rng_time_seed
+from revolve2.experimentation.rng import make_rng_time_seed, make_rng_time_seed2
 from revolve2.modular_robot_simulation import ModularRobotScene, simulate_scenes
 from revolve2.simulation.scene import Pose
 from revolve2.standards import terrains
@@ -40,7 +40,8 @@ def main(config: Config, folder_name: str = "stats") -> None:
     stats = Statistics(folder_name=folder_name)
 
     # Set up the random number generator.
-    rng = make_rng_time_seed()
+    rng, seed = make_rng_time_seed2()
+    stats.save_seed(seed)
     innov_db_body = multineat.InnovationDatabase()
     innov_db_brain = multineat.InnovationDatabase()
 

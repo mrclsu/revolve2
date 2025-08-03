@@ -11,10 +11,14 @@ class Statistics:
     def __init__(self, folder_name: str = "stats"):
         self.generation_to_population_size: dict[int, int] = {}
         self.robot_stats: dict[str, dict[str, float]] = {}
+        self.seed: int | None = None
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.folder_path = Path(folder_name) / f"run_{timestamp}"
         self.folder_path.mkdir(parents=True, exist_ok=True)
+
+    def save_seed(self, seed: int):
+        self.seed = seed
 
     def add_generation(self, generation: int, population_size: int):
         self.generation_to_population_size[generation] = population_size
@@ -97,6 +101,7 @@ class Statistics:
         data = {
             "generation_to_population_size": self.generation_to_population_size,
             "robot_stats": self.robot_stats,
+            "seed": self.seed,
         }
         with open(self.folder_path / f"stats_{postfix}.json", "w+") as f:
             json.dump(data, f, indent=4)
