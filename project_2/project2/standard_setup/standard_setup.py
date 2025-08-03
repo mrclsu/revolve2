@@ -9,7 +9,7 @@ from project2.individual import Individual
 
 
 from revolve2.experimentation.logging import setup_logging
-from revolve2.experimentation.rng import make_rng_time_seed2
+from revolve2.experimentation.rng import make_rng, make_rng_time_seed2
 from project2.stats import Statistics
 from project2.incubator import Incubator
 
@@ -77,7 +77,7 @@ def run_standard_setup(
         training_budget=config.INCUBATOR_TRAINING_BUDGET,
         innov_db_body=innov_db_body,
         innov_db_brain=innov_db_brain,
-        rng=rng,
+        rng=make_rng(1754174736443226),
         num_simulators=config.NUM_SIMULATORS,
     ).incubate()
 

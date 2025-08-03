@@ -11,7 +11,11 @@ from revolve2.simulation.scene.vector2.vector2 import Vector2
 import multineat
 
 from revolve2.experimentation.logging import setup_logging
-from revolve2.experimentation.rng import make_rng_time_seed, make_rng_time_seed2
+from revolve2.experimentation.rng import (
+    make_rng,
+    make_rng_time_seed,
+    make_rng_time_seed2,
+)
 from revolve2.modular_robot_simulation import ModularRobotScene, simulate_scenes
 from revolve2.simulation.scene import Pose
 from revolve2.standards import terrains
@@ -54,7 +58,7 @@ def main(config: Config, folder_name: str = "stats") -> None:
         training_budget=config.INCUBATOR_TRAINING_BUDGET,
         innov_db_body=innov_db_body,
         innov_db_brain=innov_db_brain,
-        rng=rng,
+        rng=make_rng(1754174736443226),
         num_simulators=config.NUM_SIMULATORS,
     ).incubate()
 
