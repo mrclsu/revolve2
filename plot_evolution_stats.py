@@ -22,6 +22,7 @@ import sys
 import argparse
 from pathlib import Path
 from collections import defaultdict
+import shutil
 
 
 def load_data(filename):
@@ -469,58 +470,79 @@ def print_summary_stats(generation_to_population_size, robot_stats, config_name=
     header = "=== Evolution Summary Statistics ==="
     if config_name:
         header = f"=== Evolution Summary Statistics - {config_name} ==="
-    print(header)
-    print(f"Total generations: {max(generations) + 1}")
-    print(f"Initial population: {population_sizes[0]}")
-    print(f"Final population: {population_sizes[-1]}")
-    print(f"Max population: {max(population_sizes)}")
-    print(f"Min population: {min(population_sizes)}")
-    print(f"Total robots created: {len(robot_stats)}")
-    print(f"Total births: {sum(births.values())}")
-    print(f"Total deaths: {sum(deaths.values())}")
-    print(
+
+    # Build the summary text
+    summary_lines = []
+    summary_lines.append(header)
+    summary_lines.append(f"Total generations: {max(generations) + 1}")
+    summary_lines.append(f"Initial population: {population_sizes[0]}")
+    summary_lines.append(f"Final population: {population_sizes[-1]}")
+    summary_lines.append(f"Max population: {max(population_sizes)}")
+    summary_lines.append(f"Min population: {min(population_sizes)}")
+    summary_lines.append(f"Total robots created: {len(robot_stats)}")
+    summary_lines.append(f"Total births: {sum(births.values())}")
+    summary_lines.append(f"Total deaths: {sum(deaths.values())}")
+    summary_lines.append(
         f"Robots still alive: {len([r for r in robot_stats.values() if r['final_generation'] is None])}"
     )
-    print(
+    summary_lines.append(
         f"Average age in final generation: {avg_ages[max(generations)]:.2f} generations"
     )
-    print(
+    summary_lines.append(
         f"Median age in final generation: {median_ages[max(generations)]:.2f} generations"
     )
-    print(f"Maximum average age reached: {max(avg_ages.values()):.2f} generations")
-    print(f"Maximum median age reached: {max(median_ages.values()):.2f} generations")
-    print(f"Maximum oldest age reached: {max(max_ages.values()):.2f} generations")
+    summary_lines.append(
+        f"Maximum average age reached: {max(avg_ages.values()):.2f} generations"
+    )
+    summary_lines.append(
+        f"Maximum median age reached: {max(median_ages.values()):.2f} generations"
+    )
+    summary_lines.append(
+        f"Maximum oldest age reached: {max(max_ages.values()):.2f} generations"
+    )
 
     # Print fitness statistics if available
     fitness_values = [f for f in avg_fitness.values() if f is not None]
     if fitness_values:
         final_gen_fitness = avg_fitness[max(generations)]
         if final_gen_fitness is not None:
-            print(f"Average fitness in final generation: {final_gen_fitness:.4f}")
+            summary_lines.append(
+                f"Average fitness in final generation: {final_gen_fitness:.4f}"
+            )
 
         max_avg_fitness = max(fitness_values)
         max_fitness_values = [f for f in max_fitness.values() if f is not None]
         if max_fitness_values:
-            print(f"Best fitness ever achieved: {max(max_fitness_values):.4f}")
-            print(f"Best average fitness: {max_avg_fitness:.4f}")
+            summary_lines.append(
+                f"Best fitness ever achieved: {max(max_fitness_values):.4f}"
+            )
+            summary_lines.append(f"Best average fitness: {max_avg_fitness:.4f}")
     else:
-        print("No fitness data available in robot_stats")
+        summary_lines.append("No fitness data available in robot_stats")
 
     # Print offspring statistics
     if offspring_counts:
         offspring_values = list(offspring_counts.values())
         reproducing_robots = len([c for c in offspring_values if c > 0])
-        print(f"Total robots that reproduced: {reproducing_robots}")
+        summary_lines.append(f"Total robots that reproduced: {reproducing_robots}")
         if offspring_values:
-            print(
+            summary_lines.append(
                 f"Average offspring per reproducing robot: {np.mean([c for c in offspring_values if c > 0]):.2f}"
             )
-            print(f"Max offspring by single robot: {max(offspring_values)}")
-            print(
+            summary_lines.append(
+                f"Max offspring by single robot: {max(offspring_values)}"
+            )
+            summary_lines.append(
                 f"Reproduction rate: {reproducing_robots / len(robot_stats) * 100:.1f}%"
             )
     else:
-        print("No offspring data available")
+        summary_lines.append("No offspring data available")
+
+    # Print to console
+    for line in summary_lines:
+        print(line)
+
+    return summary_lines
 
 
 def process_single_file(json_file_path, output_dir=None, config_name=""):
@@ -532,12 +554,21 @@ def process_single_file(json_file_path, output_dir=None, config_name=""):
     generation_to_population_size = data["generation_to_population_size"]
     robot_stats = data["robot_stats"]
 
-    # Print summary statistics
-    print_summary_stats(generation_to_population_size, robot_stats, config_name)
+    # Print summary statistics and get the lines
+    summary_lines = print_summary_stats(
+        generation_to_population_size, robot_stats, config_name
+    )
 
     # Set up output directory
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
+
+    # Save summary statistics to text file
+    if output_dir:
+        summary_file_path = os.path.join(output_dir, "summary_statistics.txt")
+        with open(summary_file_path, "w") as f:
+            f.write("\n".join(summary_lines))
+        print(f"Summary statistics saved to '{summary_file_path}'")
 
     # Create and save plots
     print("Creating population size plot...")
@@ -656,6 +687,23 @@ def process_folder(folder_path, output_dir=None):
     print(f"\nAll plots have been generated and saved in '{output_base_dir}'")
 
 
+def process_all_stats(stats_root, output_root):
+    """Process all experiments in the stats folder, creating plots for run1_final.json in each, mirroring the directory structure under output_root."""
+    stats_root = Path(stats_root)
+    output_root = Path(output_root)
+    for dirpath, dirnames, filenames in os.walk(stats_root):
+        dirpath = Path(dirpath)
+        # Only process run1_final.json files
+        for filename in filenames:
+            if filename == "run1_final.json":
+                rel_dir = dirpath.relative_to(stats_root)
+                output_dir = output_root / rel_dir
+                json_file_path = dirpath / filename
+                config_name = rel_dir.as_posix().replace("/", "_") or rel_dir.name
+                print(f"\nProcessing {json_file_path} -> {output_dir}")
+                process_single_file(json_file_path, output_dir, config_name)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Generate evolution statistics plots from JSON data files or folders",
@@ -664,10 +712,14 @@ def main():
 Examples:
   %(prog)s saved_stats/very_first_implementation.json
   %(prog)s saved_stats/early_results_6_confs
+  %(prog)s --all-stats
         """,
     )
     parser.add_argument(
-        "path", help="Path to a JSON file or folder containing JSON files"
+        "path",
+        nargs="?",
+        default=None,
+        help="Path to a JSON file or folder containing JSON files",
     )
     parser.add_argument(
         "--out",
@@ -675,13 +727,31 @@ Examples:
         default=None,
         help="Directory to save plots (default: current directory or <folder>/plots)",
     )
+    parser.add_argument(
+        "--all-stats",
+        action="store_true",
+        help="Process the entire stats folder, creating plots for run1_final.json in each experiment, outputting to run1_plots/ mirroring the stats/ structure.",
+    )
 
     args = parser.parse_args()
 
-    path = Path(args.path)
+    if args.all_stats:
+        stats_dir = Path("stats")
+        output_dir = Path("run1_plots")
+        if not stats_dir.exists():
+            print(f"Error: stats directory '{stats_dir}' does not exist.")
+            sys.exit(1)
+        output_dir.mkdir(exist_ok=True)
+        process_all_stats(stats_dir, output_dir)
+        print(
+            f"\nAll run1_final.json plots have been generated and saved in '{output_dir}' mirroring the stats/ structure."
+        )
+        return
+
+    path = Path(args.path) if args.path else None
     output_dir = args.out
 
-    if not path.exists():
+    if not path or not path.exists():
         print(f"Error: Path '{path}' does not exist.")
         sys.exit(1)
 

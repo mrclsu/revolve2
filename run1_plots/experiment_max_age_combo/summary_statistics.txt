@@ -1,0 +1,22 @@
+=== Evolution Summary Statistics - experiment_max_age_combo ===
+Total generations: 400
+Initial population: 35
+Final population: 24
+Max population: 45
+Min population: 24
+Total robots created: 243
+Total births: 243
+Total deaths: 219
+Robots still alive: 24
+Average age in final generation: 23.79 generations
+Median age in final generation: 19.50 generations
+Maximum average age reached: 37.84 generations
+Maximum median age reached: 41.00 generations
+Maximum oldest age reached: 69.00 generations
+Average fitness in final generation: 0.2381
+Best fitness ever achieved: 0.2994
+Best average fitness: 0.2384
+Total robots that reproduced: 117
+Average offspring per reproducing robot: 3.56
+Max offspring by single robot: 15
+Reproduction rate: 48.1%
