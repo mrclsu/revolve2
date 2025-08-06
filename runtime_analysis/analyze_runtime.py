@@ -149,6 +149,60 @@ def create_per_robot_plot(
     print(f"Generated per-robot plot: {output_dir}/per_robot_runtime_analysis.png")
 
 
+def create_combined_plot(
+    stats: Dict[str, Dict[int, Dict[str, float]]],
+    output_dir: str = "runtime_plots",
+    label: str = "",
+):
+    """
+    Create a combined plot showing min, max, avg, and std for both random and spider robots on one chart.
+    """
+    robot_counts = sorted(list(next(iter(stats.values())).keys()))
+    fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+    fig.suptitle(
+        f"Runtime Performance of 5 simulation seconds - Combined Robots - {label}",
+        fontsize=16,
+    )
+
+    for robot_type in stats.keys():
+        avg_values = [stats[robot_type][count]["average"] for count in robot_counts]
+        std_values = [stats[robot_type][count]["std"] for count in robot_counts]
+
+        # Plot average line with shading for standard deviation
+        ax.plot(
+            robot_counts,
+            avg_values,
+            linewidth=3,
+            label=f"{robot_type.capitalize()} Average",
+            zorder=3,
+            marker="o",
+        )
+        upper_bound = [avg + std for avg, std in zip(avg_values, std_values)]
+        lower_bound = [avg - std for avg, std in zip(avg_values, std_values)]
+        ax.fill_between(
+            robot_counts,
+            lower_bound,
+            upper_bound,
+            alpha=0.15,
+            label=f"{robot_type.capitalize()} Std Dev",
+        )
+
+    ax.set_xlabel("Robot Count")
+    ax.set_ylabel("Runtime (seconds)")
+    ax.set_title("Runtime Statistics vs Robot Count (Combined)")
+    ax.grid(True, alpha=0.3)
+    ax.legend(ncol=2)
+    ax.set_ylim(bottom=0)
+    plt.tight_layout()
+    plt.savefig(
+        f"{output_dir}/combined_runtime_analysis.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.close()
+    print(f"Generated combined plot: {output_dir}/combined_runtime_analysis.png")
+
+
 def create_plots(
     stats: Dict[str, Dict[int, Dict[str, float]]],
     output_dir: str = "runtime_plots",
@@ -156,10 +210,7 @@ def create_plots(
 ):
     """
     Create plots for each robot type showing max, min, average, and ±1 std shading.
-
-    Args:
-        stats: Calculated statistics
-        output_dir: Directory to save plots
+    Also creates a combined plot for all robot types.
     """
     # Create output directory
     Path(output_dir).mkdir(exist_ok=True)
@@ -256,6 +307,8 @@ def create_plots(
 
     # Create the per-robot plot
     create_per_robot_plot(stats, output_dir, label)
+    # Create the combined plot
+    create_combined_plot(stats, output_dir, label)
 
 
 def print_summary(

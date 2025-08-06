@@ -1,0 +1,71 @@
+Loading data from run_time_results_macbook.jsonl...
+Analyzing data for 100 robots:
+  Spider robots: 20 samples
+  Random robots: 20 samples
+
+=== Normality Tests for Spider Robots ===
+Shapiro-Wilk Test:
+  Statistic: 0.9902
+  P-value: 0.9984
+  Normal distribution: Yes
+
+Anderson-Darling Test:
+  Statistic: 0.1345
+  Critical values: [0.506 0.577 0.692 0.807 0.96 ]
+  Significance levels: [15.  10.   5.   2.5  1. ]
+  Normal distribution (5% level): Yes
+
+Kolmogorov-Smirnov Test:
+  Statistic: 0.0777
+  P-value: 0.9989
+  Normal distribution: Yes
+
+=== Normality Tests for Random Robots ===
+Shapiro-Wilk Test:
+  Statistic: 0.9463
+  P-value: 0.3147
+  Normal distribution: Yes
+
+Anderson-Darling Test:
+  Statistic: 0.4250
+  Critical values: [0.506 0.577 0.692 0.807 0.96 ]
+  Significance levels: [15.  10.   5.   2.5  1. ]
+  Normal distribution (5% level): Yes
+
+Kolmogorov-Smirnov Test:
+  Statistic: 0.1754
+  P-value: 0.5138
+  Normal distribution: Yes
+
+=== T-Test: Spider vs Random Robots ===
+Null Hypothesis: runtime_spider = runtime_random
+Alternative Hypothesis: runtime_spider ≠ runtime_random
+
+T-Test Results:
+  T-statistic: 3.9224
+  P-value: 0.0004
+  Significant difference: Yes
+  Cohen's d (effect size): 1.2404
+  Effect size interpretation: Very Large
+
+Descriptive Statistics:
+  Spider robots (n=20):
+    Mean: 84.6381s
+    Std: 5.7694s
+    Min: 72.2461s
+    Max: 96.9229s
+  Random robots (n=20):
+    Mean: 78.1630s
+    Std: 4.3001s
+    Min: 66.1869s
+    Max: 86.3554s
+Generated normality plots: statistical_plots/normality_analysis.png
+
+=== SUMMARY ===
+Spider robots normally distributed: True
+Random robots normally distributed: True
+Significant difference between groups: True
+Effect size: Very Large (Cohen's d = 1.2404)
+Faster robot type: Random
+
+Analysis complete! Plots saved in 'statistical_plots' directory.
