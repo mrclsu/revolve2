@@ -1,0 +1,50 @@
+
+============================================================
+RUNTIME ANALYSIS SUMMARY
+============================================================
+
+SPIDER ROBOTS:
+----------------------------------------
+Robot count with highest average runtime: 100 robots (84.638s)
+Robot count with highest variability: 100 robots (std: 5.769s)
+
+All statistics (16 robot counts):
+    1 robots: avg= 0.225s, min= 0.206s, max= 0.254s, std= 0.013s, median= 0.220s
+    5 robots: avg= 1.129s, min= 1.090s, max= 1.200s, std= 0.030s, median= 1.127s
+   10 robots: avg= 2.419s, min= 2.343s, max= 2.566s, std= 0.048s, median= 2.410s
+   15 robots: avg= 3.834s, min= 3.758s, max= 3.998s, std= 0.055s, median= 3.824s
+   20 robots: avg= 5.737s, min= 5.391s, max= 7.427s, std= 0.438s, median= 5.640s
+   25 robots: avg= 7.979s, min= 7.522s, max= 9.680s, std= 0.486s, median= 7.857s
+   30 robots: avg=10.743s, min= 9.518s, max=13.304s, std= 1.158s, median=10.256s
+   35 robots: avg=13.089s, min=11.572s, max=15.546s, std= 1.195s, median=13.102s
+   40 robots: avg=16.444s, min=13.792s, max=18.656s, std= 1.273s, median=16.474s
+   45 robots: avg=19.713s, min=17.921s, max=23.592s, std= 1.666s, median=18.955s
+   50 robots: avg=24.858s, min=20.187s, max=33.452s, std= 3.291s, median=24.227s
+   60 robots: avg=33.310s, min=27.338s, max=38.309s, std= 3.474s, median=33.200s
+   70 robots: avg=43.098s, min=39.077s, max=49.564s, std= 2.898s, median=42.339s
+   80 robots: avg=55.810s, min=49.988s, max=67.152s, std= 4.258s, median=56.295s
+   90 robots: avg=68.600s, min=60.942s, max=79.049s, std= 4.646s, median=68.230s
+  100 robots: avg=84.638s, min=72.246s, max=96.923s, std= 5.769s, median=84.230s
+
+RANDOM ROBOTS:
+----------------------------------------
+Robot count with highest average runtime: 100 robots (78.163s)
+Robot count with highest variability: 80 robots (std: 5.435s)
+
+All statistics (16 robot counts):
+    1 robots: avg= 0.255s, min= 0.067s, max= 0.593s, std= 0.114s, median= 0.262s
+    5 robots: avg= 1.425s, min= 0.945s, max= 1.936s, std= 0.250s, median= 1.478s
+   10 robots: avg= 2.856s, min= 1.681s, max= 4.252s, std= 0.538s, median= 2.852s
+   15 robots: avg= 4.869s, min= 3.604s, max= 6.308s, std= 0.772s, median= 4.588s
+   20 robots: avg= 6.659s, min= 5.571s, max= 7.937s, std= 0.634s, median= 6.671s
+   25 robots: avg= 9.606s, min= 7.612s, max=12.837s, std= 1.207s, median= 9.308s
+   30 robots: avg=11.624s, min= 8.800s, max=14.332s, std= 1.609s, median=11.390s
+   35 robots: avg=15.103s, min=11.838s, max=18.677s, std= 1.750s, median=14.580s
+   40 robots: avg=18.493s, min=14.827s, max=24.175s, std= 2.355s, median=17.663s
+   45 robots: avg=22.126s, min=18.522s, max=27.441s, std= 2.704s, median=21.082s
+   50 robots: avg=25.870s, min=20.684s, max=30.701s, std= 2.919s, median=25.706s
+   60 robots: avg=34.554s, min=28.887s, max=39.727s, std= 2.799s, median=34.785s
+   70 robots: avg=43.945s, min=38.044s, max=50.381s, std= 3.205s, median=44.142s
+   80 robots: avg=54.099s, min=44.702s, max=68.900s, std= 5.435s, median=53.568s
+   90 robots: avg=63.825s, min=55.235s, max=72.450s, std= 4.573s, median=63.710s
+  100 robots: avg=78.163s, min=66.187s, max=86.355s, std= 4.300s, median=78.230s
