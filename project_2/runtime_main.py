@@ -110,7 +110,7 @@ def main() -> None:
     setup_logging(level=logging.WARNING)
     limits = FieldLimits(-5, 5, -5, 5)
     iterations = 20
-    robot_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    robot_counts = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100]
     robot_types = ["spider", "random"]
 
     # Set up the random number generator.
