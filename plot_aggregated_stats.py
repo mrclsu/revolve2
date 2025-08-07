@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
 from scipy import stats
+import seaborn as sns
 
 
 def load_aggregated_data(file_path):
@@ -189,6 +190,146 @@ def create_median_fitness_plot(
     plt.close()
 
 
+def create_combined_max_npl_plot(aggregated_files, output_path):
+    """Create a combined plot of the three max_npl cases on a single plot."""
+    plt.style.use("seaborn-v0_8")
+    plt.figure(figsize=(14, 10))
+
+    cases = ["standard_max_npl", "lowest_fitness_max_npl", "max_age_max_npl"]
+    labels = ["Baseline", "Lowest Fitness Death Mechanism", "Max Age Death Mechanism"]
+
+    for i, case in enumerate(cases):
+        # Find the corresponding file
+        case_file = None
+        for file_path in aggregated_files:
+            if case in file_path:
+                case_file = file_path
+                break
+
+        if case_file is None:
+            print(f"Warning: Could not find file for case {case}")
+            continue
+
+        try:
+            # Load data
+            data = load_aggregated_data(case_file)
+            stats_data = extract_fitness_stats(data)
+
+            generations = stats_data["generations"]
+            avg_fitness = stats_data["avg_fitness"]
+
+            # Calculate Q1 and Q3 for each generation
+            robot_stats = data["robot_stats_per_generation"]
+            q1_values = []
+            q3_values = []
+
+            for gen in sorted(robot_stats.keys(), key=int):
+                fitness_values = [robot["fitness"] for robot in robot_stats[gen]]
+                q1_values.append(np.percentile(fitness_values, 25))
+                q3_values.append(np.percentile(fitness_values, 75))
+
+            # Plot average line
+            plt.plot(
+                generations,
+                avg_fitness,
+                linewidth=2,
+                label=labels[i],
+            )
+
+            # Fill area between Q1 and Q3
+            plt.fill_between(generations, q1_values, q3_values, alpha=0.2)
+
+        except Exception as e:
+            print(f"Error processing {case_file}: {e}")
+            continue
+
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness (Normalized Path Length)")
+    plt.title("Average Fitness with 1st and 3rd Quantile Bounds")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    # Save plot
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def create_violin_swarm_plot(aggregated_files, output_path):
+    """Create violin and swarm plots for the three NPL-based experiments showing last generation fitness."""
+    cases = ["standard_max_npl", "lowest_fitness_max_npl", "max_age_max_npl"]
+    labels = ["Baseline", "Lowest Fitness Death Mechanism", "Max Age Death Mechanism"]
+
+    # Collect fitness data for last generation from each case
+    fitness_data = []
+    case_labels = []
+
+    for i, case in enumerate(cases):
+        # Find the corresponding file
+        case_file = None
+        for file_path in aggregated_files:
+            if case in file_path:
+                case_file = file_path
+                break
+
+        if case_file is None:
+            print(f"Warning: Could not find file for case {case}")
+            continue
+
+        try:
+            # Load data
+            data = load_aggregated_data(case_file)
+            robot_stats = data["robot_stats_per_generation"]
+
+            # Get last generation
+            last_gen = max(robot_stats.keys(), key=int)
+            fitness_values = [robot["fitness"] for robot in robot_stats[last_gen]]
+
+            # Flatten fitness values if they are lists
+            flattened_fitness = []
+            for fitness in fitness_values:
+                if isinstance(fitness, list):
+                    flattened_fitness.extend(fitness)
+                else:
+                    flattened_fitness.append(fitness)
+
+            # Add to data lists
+            fitness_data.extend(flattened_fitness)
+            case_labels.extend([labels[i]] * len(flattened_fitness))
+
+        except Exception as e:
+            print(f"Error processing {case_file}: {e}")
+            continue
+
+    # Ensure data is properly structured
+    if not fitness_data or not case_labels:
+        print("Error: No data found for violin plot")
+        return
+
+    # Create DataFrame for seaborn
+    df = pd.DataFrame({"Fitness": fitness_data, "Experiment": case_labels})
+
+    # Create the plot
+    plt.style.use("seaborn-v0_8")
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Create violin plot
+    sns.violinplot(data=df, y="Experiment", x="Fitness", ax=ax, inner=None, alpha=0.7)
+
+    # Overlay swarm plot
+    sns.swarmplot(data=df, y="Experiment", x="Fitness", ax=ax, size=3, alpha=0.6)
+
+    ax.set_xlabel("Fitness (Normalized Path Length)")
+    ax.set_ylabel("Experiment")
+    ax.set_title("Last Generation Fitness Distribution - NPL-based Experiments")
+    ax.grid(True, alpha=0.3)
+
+    # Save plot
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
 def find_aggregated_files():
     """Find all aggregated JSON files in the aggregated_stats folder."""
     files = glob.glob("aggregated_stats/*_aggregated.json")
@@ -281,6 +422,18 @@ def main():
         except Exception as e:
             print(f"  Error processing {file_path}: {e}")
             continue
+
+    # Create combined max_npl plot
+    print(f"\nCreating combined max_npl plot...")
+    combined_plot_path = output_dir / "combined_max_npl_cases.png"
+    create_combined_max_npl_plot(aggregated_files, combined_plot_path)
+    print(f"Created combined plot: {combined_plot_path}")
+
+    # Create violin and swarm plot for last generation
+    print(f"\nCreating violin and swarm plot for last generation...")
+    violin_plot_path = output_dir / "violin_swarm_last_generation_npl.png"
+    create_violin_swarm_plot(aggregated_files, violin_plot_path)
+    print(f"Created violin and swarm plot: {violin_plot_path}")
 
     print(f"\nAll plots saved to: {output_dir.absolute()}")
 
