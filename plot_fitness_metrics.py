@@ -178,6 +178,136 @@ def compute_q1_q3_per_generation(
     return generations, q1_values, q3_values
 
 
+def compute_q1_q3_median_per_generation(
+    data: Dict[str, Any], metric_key: str
+) -> Tuple[List[int], List[float], List[float], List[float]]:
+    """Compute Q1, median, and Q3 of a metric for each generation."""
+    robot_stats: Dict[str, List[Dict[str, Any]]] = data.get(
+        "robot_stats_per_generation", {}
+    )
+    generations: List[int] = []
+    medians: List[float] = []
+    q1_values: List[float] = []
+    q3_values: List[float] = []
+
+    for gen in sorted(robot_stats.keys(), key=int):
+        metric_vals_raw = [
+            r.get("fitness_metrics", {}).get(metric_key, None) for r in robot_stats[gen]
+        ]
+        metric_vals = _flatten(metric_vals_raw)
+        if len(metric_vals) == 0:
+            continue
+        arr = np.array(metric_vals, dtype=float)
+        generations.append(int(gen))
+        medians.append(float(np.median(arr)))
+        q1_values.append(float(np.percentile(arr, 25)))
+        q3_values.append(float(np.percentile(arr, 75)))
+
+    return generations, q1_values, medians, q3_values
+
+
+def create_merged_medians_plot(
+    data: Dict[str, Any],
+    output_path: Path,
+    experiment_name: str,
+) -> None:
+    """Create a merged plot showing median MAX_DISTANCE and HEAD_STABILITY with Q1–Q3 ranges."""
+    # Compute for both metrics
+    gens_d, q1_d, med_d, q3_d = compute_q1_q3_median_per_generation(
+        data, "MAX_DISTANCE"
+    )
+    gens_h, q1_h, med_h, q3_h = compute_q1_q3_median_per_generation(
+        data, "HEAD_STABILITY"
+    )
+
+    if not gens_d or not gens_h:
+        return
+
+    # Align by intersection of generations
+    set_gens = sorted(set(gens_d).intersection(gens_h))
+    if not set_gens:
+        return
+
+    map_d = {g: (q1, med, q3) for g, q1, med, q3 in zip(gens_d, q1_d, med_d, q3_d)}
+    map_h = {g: (q1, med, q3) for g, q1, med, q3 in zip(gens_h, q1_h, med_h, q3_h)}
+
+    aligned_gens: List[int] = []
+    d_q1: List[float] = []
+    d_med: List[float] = []
+    d_q3: List[float] = []
+    h_q1: List[float] = []
+    h_med: List[float] = []
+    h_q3: List[float] = []
+
+    for g in set_gens:
+        if g in map_d and g in map_h:
+            dq1, dmd, dq3 = map_d[g]
+            hq1, hmd, hq3 = map_h[g]
+            aligned_gens.append(g)
+            d_q1.append(dq1)
+            d_med.append(dmd)
+            d_q3.append(dq3)
+            h_q1.append(hq1)
+            h_med.append(hmd)
+            h_q3.append(hq3)
+
+    if not aligned_gens:
+        return
+
+    plt.style.use("seaborn-v0_8")
+    plt.figure(figsize=(12, 8))
+
+    # Colors matching earlier choices
+    color_distance = "#1f77b4"  # blue
+    color_head = "#2ca02c"  # green
+
+    # MAX_DISTANCE median and Q1–Q3
+    plt.plot(
+        aligned_gens,
+        d_med,
+        color=color_distance,
+        linewidth=2.5,
+        label="Max Distance (Median)",
+    )
+    plt.fill_between(
+        aligned_gens,
+        d_q1,
+        d_q3,
+        color=color_distance,
+        alpha=0.20,
+        label="Max Distance Q1–Q3",
+    )
+
+    # HEAD_STABILITY median and Q1–Q3
+    plt.plot(
+        aligned_gens,
+        h_med,
+        color=color_head,
+        linewidth=2.5,
+        label="Head Stability (Median)",
+    )
+    plt.fill_between(
+        aligned_gens,
+        h_q1,
+        h_q3,
+        color=color_head,
+        alpha=0.20,
+        label="Head Stability Q1–Q3",
+    )
+
+    plt.xlabel("Generation")
+    plt.ylabel("Value")
+    plt.title(
+        f"{experiment_name} - Median Head Stability and Max Distance (Normalized Path Length) with Q1–Q3 Bounds"
+    )
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
 def create_metric_plot(
     stats_data: Dict[str, List[float]], output_path: Path, title: str, y_label: str
 ) -> None:
@@ -370,6 +500,17 @@ def main() -> None:
             except Exception as e:
                 print(f"  Error processing metric {metric_key} for {file_path}: {e}")
                 continue
+
+        # Create merged medians plot with Q1–Q3 shading
+        try:
+            merged_path = (
+                experiment_output_dir
+                / "merged_median_head_stability_and_max_distance.png"
+            )
+            create_merged_medians_plot(data, merged_path, experiment_name)
+            print(f"  Created plot: {merged_path}")
+        except Exception as e:
+            print(f"  Error creating merged plot for {file_path}: {e}")
 
     print(f"\nAll metric plots saved to: {output_root.absolute()}")
 

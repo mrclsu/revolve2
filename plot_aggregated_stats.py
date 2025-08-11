@@ -519,7 +519,7 @@ def create_combined_average_population_plot(
     # Title helper
     title_map = {
         "combo": "Combo",
-        "max_head": "Max Head",
+        "max_head": "Max Head Stability",
         "max_npl": "Max NPL",
     }
     pretty_key = title_map.get(fitness_key, fitness_key)
